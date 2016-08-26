@@ -41,6 +41,10 @@ view model =
       , border PositionRight
       , border PositionBottom
       , border PositionLeft
+      , dragbar PositionTop
+      , dragbar PositionRight
+      , dragbar PositionBottom
+      , dragbar PositionLeft
       , handle NorthWest
       , handle North
       , handle NorthEast
@@ -71,25 +75,13 @@ placeholdit w h =
       , height h
       ] []
 
-type BorderPosition = PositionTop | PositionRight | PositionBottom | PositionLeft
+type Position = PositionTop | PositionRight | PositionBottom | PositionLeft
 type Orientation = Horizontal | Vertical
 
-border : BorderPosition -> Html Msg
+border : Position -> Html Msg
 border position =
   let
-    (cssPosition, orientation) =
-      case position of
-        PositionTop ->
-          ("top", Horizontal)
-        
-        PositionRight ->
-          ("right", Vertical)
-
-        PositionBottom ->
-          ("bottom", Horizontal)
-
-        PositionLeft ->
-          ("left", Vertical)
+    (cssPosition, orientation) = positionMagic position
   in
     div
       [ style
@@ -136,7 +128,7 @@ handle orientation =
         (("bottom", "0"), ("margin-bottom", "-6px"))
 
     cursor =
-      (case orientation of
+      case orientation of
         NorthWest ->
           "nw"
         
@@ -159,7 +151,7 @@ handle orientation =
           "sw"
 
         West ->
-          "w") ++ "-resize"
+          "w"
   in
     div
       [ style
@@ -173,9 +165,57 @@ handle orientation =
           , verticalPosition
           , horizontalMargin
           , verticalMargin
-          , ("cursor", cursor)
+          , ("cursor", cursor ++ "-resize")
           ]
       ] []
+
+dragbar : Position -> Html Msg
+dragbar position =
+  let
+    (cssPosition, orientation) = positionMagic position
+
+    cursor =
+      case position of
+        PositionTop ->
+          "n"
+
+        PositionRight ->
+          "e"
+
+        PositionBottom ->
+          "s"
+
+        PositionLeft ->
+          "w"
+  in
+    div
+      [ style
+          [ ("position", "absolute")
+          , ("width", if orientation == Horizontal then "100%" else "9px")
+          , ("height", if orientation == Vertical then "100%" else "9px")
+          , (cssPosition, "0")
+          , ("margin-" ++ cssPosition, "-5px")
+          , ("cursor", cursor ++ "-resize")
+          ]
+      ]
+      []
+
+positionMagic : Position -> (String, Orientation)
+positionMagic position =
+  case position of
+    PositionTop ->
+      ("top", Horizontal)
+    
+    PositionRight ->
+      ("right", Vertical)
+
+    PositionBottom ->
+      ("bottom", Horizontal)
+
+    PositionLeft ->
+      ("left", Vertical)
+
+
 
 type Msg
   = Left String

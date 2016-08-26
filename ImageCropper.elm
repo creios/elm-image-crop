@@ -41,6 +41,14 @@ view model =
       , borderDiv PositionRight
       , borderDiv PositionBottom
       , borderDiv PositionLeft
+      , handle ("left", "0") ("top", "0") ("margin", "-6px 0 0 -6px")
+      , handle ("left", "50%") ("top", "0") ("margin", "-6px 0 0 -6px")
+      , handle ("right", "0") ("top", "0") ("margin", "-6px -6px 0 0")
+      , handle ("right", "0") ("top", "50%") ("margin", "-6px -6px 0 0")
+      , handle ("right", "0") ("bottom", "0") ("margin", "0 -6px -6px 0")
+      , handle ("left", "50%") ("bottom", "0") ("margin", "0 0 -6px -6px")
+      , handle ("left", "0") ("bottom", "0") ("margin", "0 0 -6px -6px")
+      , handle ("left", "0") ("top", "50%") ("margin", "-6px 0 0 -6px")
       ]
     , Html.form
       [
@@ -86,14 +94,29 @@ borderDiv position =
     div
       [ style
         [ ("position", "absolute")
-        , (cssPosition, "0")
+        , (cssPosition, "-1px")
         , ("width", if orientation == Horizontal then "100%" else "1px")
         , ("height", if orientation == Vertical then "100%" else "1px")
         , ("overflow", "hidden")
-        , ("background", "url(http://jcrop.org/css/Jcrop.gif)")
+        , ("background", "#fff url(http://jcrop.org/css/Jcrop.gif)")
         ]
       ] []
 
+handle : (String, String) -> (String, String) -> (String, String) -> Html Msg
+handle horizontalPosition verticalPosition margin =
+  div
+    [ style
+        [ ("background-color", "rgba(49,28,28,0.58)")
+        , ("border", "1px #eee solid")
+        , ("width", "9px")
+        , ("height", "9px")
+        , ("position", "absolute")
+        , ("opacity", "0.8")
+        , horizontalPosition
+        , verticalPosition
+        , margin
+        ]
+    ] []
 
 type Msg
   = Left String

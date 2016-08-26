@@ -37,18 +37,18 @@ view model =
         , ("width", toString model.width ++ "px")
         , ("height", toString model.height ++ "px")
         ] ]
-      [ borderDiv PositionTop
-      , borderDiv PositionRight
-      , borderDiv PositionBottom
-      , borderDiv PositionLeft
-      , handle ("left", "0") ("top", "0") ("margin", "-6px 0 0 -6px")
-      , handle ("left", "50%") ("top", "0") ("margin", "-6px 0 0 -6px")
-      , handle ("right", "0") ("top", "0") ("margin", "-6px -6px 0 0")
-      , handle ("right", "0") ("top", "50%") ("margin", "-6px -6px 0 0")
-      , handle ("right", "0") ("bottom", "0") ("margin", "0 -6px -6px 0")
-      , handle ("left", "50%") ("bottom", "0") ("margin", "0 0 -6px -6px")
-      , handle ("left", "0") ("bottom", "0") ("margin", "0 0 -6px -6px")
-      , handle ("left", "0") ("top", "50%") ("margin", "-6px 0 0 -6px")
+      [ border PositionTop
+      , border PositionRight
+      , border PositionBottom
+      , border PositionLeft
+      , handle NorthWest
+      , handle North
+      , handle NorthEast
+      , handle East
+      , handle SouthEast
+      , handle South
+      , handle SouthWest
+      , handle West
       ]
     , Html.form
       [
@@ -74,8 +74,8 @@ placeholdit w h =
 type BorderPosition = PositionTop | PositionRight | PositionBottom | PositionLeft
 type Orientation = Horizontal | Vertical
 
-borderDiv : BorderPosition -> Html Msg
-borderDiv position =
+border : BorderPosition -> Html Msg
+border position =
   let
     (cssPosition, orientation) =
       case position of
@@ -102,21 +102,80 @@ borderDiv position =
         ]
       ] []
 
-handle : (String, String) -> (String, String) -> (String, String) -> Html Msg
-handle horizontalPosition verticalPosition margin =
-  div
-    [ style
-        [ ("background-color", "rgba(49,28,28,0.58)")
-        , ("border", "1px #eee solid")
-        , ("width", "9px")
-        , ("height", "9px")
-        , ("position", "absolute")
-        , ("opacity", "0.8")
-        , horizontalPosition
-        , verticalPosition
-        , margin
-        ]
-    ] []
+type HandleOrientation
+  = North
+  | NorthEast
+  | East
+  | SouthEast
+  | South
+  | SouthWest
+  | West
+  | NorthWest
+
+handle : HandleOrientation -> Html Msg
+handle orientation =
+  let
+    (horizontalPosition, horizontalMargin) =
+      if orientation == NorthWest || orientation == SouthWest || orientation == West then
+        (("left", "0"), ("margin-left", "-6px"))
+
+      else if orientation == North || orientation == South then
+        (("left", "50%"), ("margin-left", "-6px"))
+
+      else
+        (("right", "0"), ("margin-right", "-6px"))
+
+    (verticalPosition, verticalMargin) =
+      if orientation == NorthWest || orientation == North || orientation == NorthEast then
+        (("top", "0"), ("margin-top", "-6px"))
+
+      else if orientation == East || orientation == West then
+        (("top", "50%"), ("margin-top", "-6px"))
+
+      else
+        (("bottom", "0"), ("margin-bottom", "-6px"))
+
+    cursor =
+      (case orientation of
+        NorthWest ->
+          "nw"
+        
+        North ->
+          "n"
+    
+        NorthEast ->
+          "ne"
+
+        East ->
+          "e"
+
+        SouthEast ->
+          "se"
+
+        South ->
+          "s"
+
+        SouthWest ->
+          "sw"
+
+        West ->
+          "w") ++ "-resize"
+  in
+    div
+      [ style
+          [ ("background-color", "rgba(49,28,28,0.58)")
+          , ("border", "1px #eee solid")
+          , ("width", "9px")
+          , ("height", "9px")
+          , ("position", "absolute")
+          , ("opacity", "0.8")
+          , horizontalPosition
+          , verticalPosition
+          , horizontalMargin
+          , verticalMargin
+          , ("cursor", cursor)
+          ]
+      ] []
 
 type Msg
   = Left String

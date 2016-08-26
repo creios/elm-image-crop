@@ -34,11 +34,14 @@ view model =
         [ ("position", "absolute")
         , ("top", toString model.top ++ "px")
         , ("left", toString model.left ++ "px")
-        , ("border", "1px solid black")
         , ("width", toString model.width ++ "px")
         , ("height", toString model.height ++ "px")
         ] ]
-      []
+      [ borderDiv PositionTop
+      , borderDiv PositionRight
+      , borderDiv PositionBottom
+      , borderDiv PositionLeft
+      ]
     , Html.form
       [
       ]
@@ -58,6 +61,37 @@ placeholdit w h =
   img [ src ("https://placehold.it/" ++ toString w ++ "x" ++ toString h)
       , width w
       , height h
+      ] []
+
+type BorderPosition = PositionTop | PositionRight | PositionBottom | PositionLeft
+type Orientation = Horizontal | Vertical
+
+borderDiv : BorderPosition -> Html Msg
+borderDiv position =
+  let
+    (cssPosition, orientation) =
+      case position of
+        PositionTop ->
+          ("top", Horizontal)
+        
+        PositionRight ->
+          ("right", Vertical)
+
+        PositionBottom ->
+          ("bottom", Horizontal)
+
+        PositionLeft ->
+          ("left", Vertical)
+  in
+    div
+      [ style
+        [ ("position", "absolute")
+        , (cssPosition, "0")
+        , ("width", if orientation == Horizontal then "100%" else "1px")
+        , ("height", if orientation == Vertical then "100%" else "1px")
+        , ("overflow", "hidden")
+        , ("background", "url(http://jcrop.org/css/Jcrop.gif)")
+        ]
       ] []
 
 

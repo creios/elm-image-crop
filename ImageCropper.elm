@@ -3,6 +3,7 @@ import Html.App exposing (beginnerProgram)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import String exposing(toInt)
+import Result
 
 
 main =
@@ -56,7 +57,8 @@ placeholdit : Int -> Int -> Html Msg
 placeholdit w h =
   img [ src ("https://placehold.it/" ++ toString w ++ "x" ++ toString h)
       , width w
-      , height h ] []
+      , height h
+      ] []
 
 
 type Msg
@@ -69,26 +71,10 @@ type Msg
 update msg model =
   case msg of
     Left value ->
-      { model | left = case toInt value of
-                         Err msg
-                           -> model.left
-                         Ok val
-                           -> val }
+      { model | left = Result.withDefault model.left (toInt value) }
     Top value ->
-      { model | top = case toInt value of
-                        Err msg
-                          -> model.top
-                        Ok val
-                          -> val }
+      { model | top = Result.withDefault model.top (toInt value) }
     Width value ->
-      { model | width = case toInt value of
-                          Err msg
-                            -> model.width
-                          Ok val
-                            -> val }
+      { model | width = Result.withDefault model.width (toInt value) }
     Height value ->
-      { model | height = case toInt value of
-                           Err msg
-                             -> model.height
-                           Ok val
-                             -> val }
+      { model | height = Result.withDefault model.height (toInt value) }

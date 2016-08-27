@@ -10,18 +10,25 @@ main =
   
 init : Model
 init =
-  { top = 10
-  , left = 20
-  , width = 120
-  , height = 70
+  { selection =
+    { x = 20
+    , y = 10
+    , width = 120
+    , height = 70
+    }
   }
   
 type alias Model =
-  { top: Int
-  , left: Int
+  { selection: Area
+  }
+
+type alias Area =
+  { x: Int
+  , y: Int
   , width: Int
   , height: Int
   }
+
 
 borders : List (Html Msg)
 borders =
@@ -61,13 +68,14 @@ px : Int -> String
 px value =
   toString value ++ "px"
 
-selectionStyle model =
+selectionStyle : Area -> Attribute Msg
+selectionStyle selection =
   style
     [ ("position", "absolute")
-    , ("top", px model.top)
-    , ("left", px model.left)
-    , ("width", px model.width)
-    , ("height", px model.height)
+    , ("left", px selection.x)
+    , ("top", px selection.y)
+    , ("width", px selection.width)
+    , ("height", px selection.height)
     ]
 
 view : Model -> Html Msg
@@ -76,21 +84,41 @@ view model =
     []
     [ placeholdit 200 100
     , div
-      [ selectionStyle model ]
+        [ selectionStyle model.selection ]
         (borders ++ dragbars ++ handles)
-    , Html.form
-      [
-      ]
-      [ label [] [ text "Links" ]
-      , input [ type' "number", value (toString model.left), onInput Left ] []
-      , label [] [ text "Oben" ]
-      , input [ type' "number", value (toString model.top), onInput Top ] []
-      , label [] [ text "Breite" ]
-      , input [ type' "number", value (toString model.width), onInput Width ] []
-      , label [] [ text "Höhe" ]
-      , input [ type' "number", value (toString model.height), onInput Height ] []
-      ]
+    , debugForm model.selection
     ]
+
+debugForm : Area -> Html Msg
+debugForm selection =
+  Html.form
+    []
+    [ label [] [ text "X" ]
+    , input
+      [ type' "number"
+      , value (toString selection.x)
+      , onInput Left
+      ] []
+    , label [] [ text "Y" ]
+    , input
+      [ type' "number"
+      , value (toString selection.y)
+      , onInput Top
+      ] []
+    , label [] [ text "Breite" ]
+    , input
+      [ type' "number"
+      , value (toString selection.width)
+      , onInput Width
+      ] []
+    , label [] [ text "Höhe" ]
+    , input
+      [ type' "number"
+      , value (toString selection.height)
+      , onInput Height
+      ] []
+    ]
+
 
 placeholdit : Int -> Int -> Html Msg
 placeholdit w h =
@@ -248,13 +276,29 @@ type Msg
   | Height String
 
 
+update : Msg -> Model -> Model
 update msg model =
-  case msg of
-    Left value ->
-      { model | left = Result.withDefault model.left (toInt value) }
-    Top value ->
-      { model | top = Result.withDefault model.top (toInt value) }
-    Width value ->
-      { model | width = Result.withDefault model.width (toInt value) }
-    Height value ->
-      { model | height = Result.withDefault model.height (toInt value) }
+  let
+    selection = model.selection
+  in
+    case msg of
+      Left value ->
+        let
+          newSelection = { selection | x = Result.withDefault selection.x (toInt value) }
+        in
+          { model | selection = newSelection }
+      Top value ->
+        let
+          newSelection = { selection | y = Result.withDefault selection.y (toInt value) }
+        in
+          { model | selection = newSelection }
+      Width value ->
+        let
+          newSelection = { selection | width = Result.withDefault selection.width (toInt value) }
+        in
+          { model | selection = newSelection }
+      Height value ->
+        let
+          newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
+        in
+          { model | selection = newSelection }

@@ -3,7 +3,6 @@ import Html.App exposing (beginnerProgram)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import String exposing(toInt)
-import Result
 
 
 main =
@@ -24,36 +23,61 @@ type alias Model =
   , height: Int
   }
 
+borders : List (Html Msg)
+borders =
+  List.map
+  border
+  [ PositionTop
+  , PositionRight
+  , PositionBottom
+  , PositionLeft
+  ]
+
+dragbars : List (Html Msg)
+dragbars =
+  List.map
+    dragbar
+    [ PositionTop
+    , PositionRight
+    , PositionBottom
+    , PositionLeft
+    ]
+
+handles : List (Html Msg)
+handles =
+  List.map
+    handle
+    [ NorthWest
+    , North
+    , NorthEast
+    , East
+    , SouthEast
+    , South
+    , SouthWest
+    , West
+    ]
+
+px : Int -> String
+px value =
+  toString value ++ "px"
+
+selectionStyle model =
+  style
+    [ ("position", "absolute")
+    , ("top", px model.top)
+    , ("left", px model.left)
+    , ("width", px model.width)
+    , ("height", px model.height)
+    ]
+
 view : Model -> Html Msg
 view model =
   div
     []
     [ placeholdit 200 100
     , div
-      [ style
-        [ ("position", "absolute")
-        , ("top", toString model.top ++ "px")
-        , ("left", toString model.left ++ "px")
-        , ("width", toString model.width ++ "px")
-        , ("height", toString model.height ++ "px")
-        ] ]
-      [ border PositionTop
-      , border PositionRight
-      , border PositionBottom
-      , border PositionLeft
-      , dragbar PositionTop
-      , dragbar PositionRight
-      , dragbar PositionBottom
-      , dragbar PositionLeft
-      , handle NorthWest
-      , handle North
-      , handle NorthEast
-      , handle East
-      , handle SouthEast
-      , handle South
-      , handle SouthWest
-      , handle West
-      ]
+      [ selectionStyle model ]
+        (borders ++ dragbars ++ handles)
     , Html.form
       [
       ]
@@ -81,7 +105,7 @@ type Orientation = Horizontal | Vertical
 border : Position -> Html Msg
 border position =
   let
-    (cssPosition, orientation) = positionMagic position
+    (cssPosition, orientation) = positionCssHelper position
   in
     div
       [ style
@@ -94,7 +118,7 @@ border position =
         ]
       ] []
 
-type HandleOrientation
+type HandlePosition
   = North
   | NorthEast
   | East
@@ -104,28 +128,28 @@ type HandleOrientation
   | West
   | NorthWest
 
-handle : HandleOrientation -> Html Msg
+handle : HandlePosition -> Html Msg
 handle orientation =
   let
-    (horizontalPosition, horizontalMargin) =
-      if orientation == NorthWest || orientation == SouthWest || orientation == West then
-        (("left", "0"), ("margin-left", "-6px"))
+    (horizontalPosition, horizontalSpacing) =
+      if List.member orientation [NorthWest, SouthWest, West] then
+        ("left", "0")
 
-      else if orientation == North || orientation == South then
-        (("left", "50%"), ("margin-left", "-6px"))
-
-      else
-        (("right", "0"), ("margin-right", "-6px"))
-
-    (verticalPosition, verticalMargin) =
-      if orientation == NorthWest || orientation == North || orientation == NorthEast then
-        (("top", "0"), ("margin-top", "-6px"))
-
-      else if orientation == East || orientation == West then
-        (("top", "50%"), ("margin-top", "-6px"))
+      else if List.member orientation [North, South] then
+        ("left", "50%")
 
       else
-        (("bottom", "0"), ("margin-bottom", "-6px"))
+        ("right", "0")
+
+    (verticalPosition, verticalSpacing) =
+      if List.member orientation [NorthWest, North, NorthEast] then
+        ("top", "0")
+
+      else if List.member orientation [East, West] then
+        ("top", "50%")
+
+      else
+        ("bottom", "0")
 
     cursor =
       case orientation of
@@ -161,10 +185,10 @@ handle orientation =
           , ("height", "9px")
           , ("position", "absolute")
           , ("opacity", "0.8")
-          , horizontalPosition
-          , verticalPosition
-          , horizontalMargin
-          , verticalMargin
+          , (horizontalPosition, horizontalSpacing)
+          , ("margin-" ++ horizontalPosition, "-6px")
+          , (verticalPosition, verticalSpacing)
+          , ("margin-" ++ verticalPosition, "-6px")
           , ("cursor", cursor ++ "-resize")
           ]
       ] []
@@ -172,7 +196,7 @@ handle orientation =
 dragbar : Position -> Html Msg
 dragbar position =
   let
-    (cssPosition, orientation) = positionMagic position
+    (cssPosition, orientation) = positionCssHelper position
 
     cursor =
       case position of
@@ -200,8 +224,8 @@ dragbar position =
       ]
       []
 
-positionMagic : Position -> (String, Orientation)
-positionMagic position =
+positionCssHelper : Position -> (String, Orientation)
+positionCssHelper position =
   case position of
     PositionTop ->
       ("top", Horizontal)

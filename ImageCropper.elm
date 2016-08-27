@@ -33,12 +33,12 @@ type alias Area =
 borders : List (Html Msg)
 borders =
   List.map
-  border
-  [ PositionTop
-  , PositionRight
-  , PositionBottom
-  , PositionLeft
-  ]
+    border
+    [ PositionTop
+    , PositionRight
+    , PositionBottom
+    , PositionLeft
+    ]
 
 dragbars : List (Html Msg)
 dragbars =

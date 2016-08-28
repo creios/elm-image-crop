@@ -2,7 +2,9 @@ import Html exposing (..)
 import Html.App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import String exposing(toInt)
+import String exposing (toInt)
+import Mouse exposing (Position)
+import Json.Decode as Json
 
 
 main =
@@ -21,21 +23,22 @@ init =
       , width = 120
       , height = 70
       }
+    , drag = Nothing
     }
   , Cmd.none
   )
   
 type alias Model =
-  { selection: Area
+  { selection : Area
+  , drag : Maybe Mouse.Position
   }
 
 type alias Area =
-  { x: Int
-  , y: Int
-  , width: Int
-  , height: Int
+  { x : Int
+  , y : Int
+  , width : Int
+  , height : Int
   }
-
 
 borders : List (Html Msg)
 borders =
@@ -83,7 +86,12 @@ selectionStyle selection =
     , ("top", px selection.y)
     , ("width", px selection.width)
     , ("height", px selection.height)
+    , ("cursor", "move")
     ]
+
+onMouseDown : Attribute Msg
+onMouseDown =
+  on "mousedown" (Json.map DragStart Mouse.position)
 
 view : Model -> Html Msg
 view model =
@@ -91,7 +99,9 @@ view model =
     []
     [ placeholdit 200 100
     , div
-        [ selectionStyle model.selection ]
+        [ selectionStyle model.selection
+        , onMouseDown
+        ]
         (borders ++ dragbars ++ handles)
     , debugForm model.selection
     ]
@@ -281,7 +291,9 @@ type Msg
   | Top String
   | Width String
   | Height String
-
+  | DragStart Mouse.Position
+  | DragAt Mouse.Position
+  | DragEnd Mouse.Position
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -309,7 +321,29 @@ update msg model =
           newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
         in
           ({ model | selection = newSelection }, Cmd.none)
+      DragStart position ->
+        let
+          newDrag = Just position
+        in
+          ({ model | drag = newDrag }, Cmd.none)
+      DragAt position ->
+        let
+          drag = Maybe.withDefault { x = 0, y = 0 } model.drag
+          x = model.selection.x + position.x - drag.x
+          y = model.selection.y + position.y - drag.y
+          newSelection =
+            { selection | x = x, y = y }
+          newDrag = Just position
+        in
+          ({ model | selection = newSelection, drag = newDrag }, Cmd.none)
+      DragEnd position ->
+        ({ model | drag = Nothing }, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
+  case model.drag of
+    Nothing ->
+      Sub.none
+
+    Just _ ->
+      Sub.batch [ Mouse.moves DragAt, Mouse.ups DragEnd ]

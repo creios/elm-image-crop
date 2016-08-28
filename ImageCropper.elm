@@ -1,22 +1,29 @@
 import Html exposing (..)
-import Html.App exposing (beginnerProgram)
+import Html.App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import String exposing(toInt)
 
 
 main =
-  beginnerProgram { model = init, view = view, update = update }
-  
-init : Model
-init =
-  { selection =
-    { x = 20
-    , y = 10
-    , width = 120
-    , height = 70
+  Html.App.program
+    { init = init
+    , view = view
+    , update = update
+    , subscriptions = subscriptions
     }
-  }
+  
+init : (Model, Cmd Msg)
+init =
+  ( { selection =
+      { x = 20
+      , y = 10
+      , width = 120
+      , height = 70
+      }
+    }
+  , Cmd.none
+  )
   
 type alias Model =
   { selection: Area
@@ -276,7 +283,7 @@ type Msg
   | Height String
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let
     selection = model.selection
@@ -286,19 +293,23 @@ update msg model =
         let
           newSelection = { selection | x = Result.withDefault selection.x (toInt value) }
         in
-          { model | selection = newSelection }
+          ({ model | selection = newSelection }, Cmd.none)
       Top value ->
         let
           newSelection = { selection | y = Result.withDefault selection.y (toInt value) }
         in
-          { model | selection = newSelection }
+          ({ model | selection = newSelection }, Cmd.none)
       Width value ->
         let
           newSelection = { selection | width = Result.withDefault selection.width (toInt value) }
         in
-          { model | selection = newSelection }
+          ({ model | selection = newSelection }, Cmd.none)
       Height value ->
         let
           newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
         in
-          { model | selection = newSelection }
+          ({ model | selection = newSelection }, Cmd.none)
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.none

@@ -123,8 +123,7 @@ updateHelper msg model =
 
       MoveAt xy ->
         let
-          updateCurrent =
-            \move -> { move | current = xy }
+          updateCurrent move = { move | current = xy }
         in
           { model | move = (Maybe.map updateCurrent move) }
 
@@ -143,8 +142,7 @@ updateHelper msg model =
 
       ResizeAt xy ->
         let
-          updateCurrent =
-            \resize -> { resize | current = xy}
+          updateCurrent resize = { resize | current = xy }
         in
           { model | resize = (Maybe.map updateCurrent resize) }
 

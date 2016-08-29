@@ -231,7 +231,7 @@ applyResize model selection =
           else
             selection.height
       in
-        Debug.log "applyResize" (Area x y width height)
+        Area x y width height
 
 -- Subscriptions
 

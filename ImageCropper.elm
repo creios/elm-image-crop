@@ -1,6 +1,6 @@
 import Html exposing (..)
 import Html.App
-import Html.Attributes exposing (..)
+import Html.Attributes exposing (style, src, width, height, value, type')
 import Html.Events exposing (..)
 import String exposing (toInt)
 import Mouse exposing (Position)
@@ -20,7 +20,7 @@ main =
 type alias Model =
   { imageSize : Size
   , selection : Area
-  , drag : Maybe Mouse.Position
+  , drag : Maybe Drag
   }
 
 type alias Size =
@@ -34,12 +34,22 @@ type alias Area =
   , width : Int
   , height : Int
   }
+
+type alias Drag =
+  { start : Mouse.Position
+  , current : Mouse.Position
+  }
+
+type alias Point =
+  { x : Int
+  , y : Int
+  }
   
 init : (Model, Cmd Msg)
 init =
   ( { imageSize =
-        { width = 200
-        , height = 100
+        { width = 400
+        , height = 200
         }
     , selection =
         { x = 20
@@ -66,7 +76,7 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let
-    selection = model.selection
+    {imageSize,selection,drag} = model
   in
     case msg of
       Left value ->
@@ -89,32 +99,35 @@ update msg model =
           newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
         in
           ({ model | selection = newSelection }, Cmd.none)
-      DragStart position ->
-        ({ model | drag = Just position }, Cmd.none)
-      DragAt position ->
+      DragStart xy ->
+        ({ model | drag = Just { start = xy, current = xy } }, Cmd.none)
+      DragAt xy ->
+        ({ model | drag = (Maybe.map (\{start} -> Drag start xy) drag) }, Cmd.none)
+      DragEnd _ ->
         let
-          drag = Maybe.withDefault position model.drag
-
-          calculatedX = selection.x + position.x - drag.x
-          x =
-            if calculatedX >= 0 && calculatedX + selection.width <= model.imageSize.width then
-              calculatedX
-            else
-              selection.x
-      
-          calculatedY = selection.y + position.y - drag.y
-          y =
-            if calculatedY >= 0 && calculatedY + selection.height <= model.imageSize.height then
-              calculatedY
-            else
-              selection.y
-
-          newSelection =
-            { selection | x = x, y = y }
+          {x,y} = getPosition model
+          newSelection = { selection | x = x, y = y }
         in
-          ({ model | selection = newSelection, drag = Just position }, Cmd.none)
-      DragEnd position ->
-        ({ model | drag = Nothing }, Cmd.none)
+        ({ model | selection = newSelection, drag = Nothing }, Cmd.none)
+
+getPosition : Model -> Point
+getPosition model =
+  case model.drag of
+    Nothing ->
+      { x = model.selection.x, y = model.selection.y }
+    
+    Just drag ->
+      let
+        x = model.selection.x + drag.current.x - drag.start.x
+            |> max 0
+            |> min (model.imageSize.width - model.selection.width)
+    
+        y = model.selection.y + drag.current.y - drag.start.y
+            |> max 0
+            |> min (model.imageSize.height - model.selection.height)
+      in
+        { x = x, y = y }
+      
 
 -- Subscriptions
 
@@ -135,7 +148,7 @@ view model =
     []
     [ placeholdit model.imageSize
     , div
-        [ selectionStyle model.selection
+        [ selectionStyle model
         , on "mousedown" (Json.map DragStart Mouse.position)
         ]
         (borders ++ dragbars ++ handles)
@@ -149,16 +162,19 @@ placeholdit size =
       , height size.height
       ] []
 
-selectionStyle : Area -> Attribute Msg
-selectionStyle selection =
-  style
-    [ ("position", "absolute")
-    , ("left", px selection.x)
-    , ("top", px selection.y)
-    , ("width", px selection.width)
-    , ("height", px selection.height)
-    , ("cursor", "move")
-    ]
+selectionStyle : Model -> Attribute Msg
+selectionStyle model =
+  let
+    {x,y} = getPosition model
+  in
+    style
+      [ ("position", "absolute")
+      , ("left", px x)
+      , ("top", px y)
+      , ("width", px model.selection.width)
+      , ("height", px model.selection.height)
+      , ("cursor", "move")
+      ]
         
 borders : List (Html Msg)
 borders =

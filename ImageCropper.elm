@@ -86,55 +86,78 @@ type Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
+  (updateHelper msg model, Cmd.none)
+
+updateHelper : Msg -> Model -> Model
+updateHelper msg model =
   let
-    {imageSize,selection,move} = model
+    {imageSize,selection,move,resize} = model
   in
     case msg of
       Left value ->
         let
           newSelection = { selection | x = Result.withDefault selection.x (toInt value) }
         in
-          ({ model | selection = newSelection }, Cmd.none)
+          { model | selection = newSelection }
           
       Top value ->
         let
           newSelection = { selection | y = Result.withDefault selection.y (toInt value) }
         in
-          ({ model | selection = newSelection }, Cmd.none)
+          { model | selection = newSelection }
           
       Width value ->
         let
           newSelection = { selection | width = Result.withDefault selection.width (toInt value) }
         in
-          ({ model | selection = newSelection }, Cmd.none)
+          { model | selection = newSelection }
       
       Height value ->
         let
           newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
         in
-          ({ model | selection = newSelection }, Cmd.none)
+          { model | selection = newSelection }
       
       MoveStart xy ->
-        ({ model | move = Just { start = xy, current = xy } }, Cmd.none)
+        { model | move = Just { start = xy, current = xy } }
       
       MoveAt xy ->
-        ({ model | move = (Maybe.map (\{start} -> Move start xy) move) }, Cmd.none)
+        let
+          updateCurrent =
+            \move -> { move | current = xy }
+        in
+          { model | move = (Maybe.map updateCurrent move) }
       
       MoveEnd _ ->
         let
           {x,y} = getPosition model
           newSelection = { selection | x = x, y = y }
         in
-        ({ model | selection = newSelection, move = Nothing }, Cmd.none)
+        { model | selection = newSelection, move = Nothing }
       
-      ResizeStart orientatin xy ->
-        (model, Cmd.none)
+      ResizeStart direction xy ->
+        let
+          resize =
+            { direction = direction
+            , start = xy
+            , current = xy
+            }
+        in
+          { model | resize = Just resize }
       
       ResizeAt xy ->
-        (model, Cmd.none)
+        let
+          updateCurrent =
+            \resize -> { resize | current = xy}
+        in
+          { model | resize = (Maybe.map updateCurrent resize) }
         
       ResizeEnd xy ->
-        (model, Cmd.none)
+        let
+          {width,height} = getSize model
+          newSelection = { selection | width = width, height = height }
+        in
+        { model | selection = newSelection, resize = Nothing }
 
 getPosition : Model -> Point
 getPosition model =
@@ -153,18 +176,49 @@ getPosition model =
             |> min (model.imageSize.height - model.selection.height)
       in
         { x = x, y = y }
-      
+
+getSize : Model -> Size
+getSize model =
+  case model.resize of
+    Nothing ->
+      { width = model.selection.width
+      , height = model.selection.height
+      }
+    
+    Just resize ->
+      let
+        width = model.selection.width + resize.current.x - resize.start.x
+        |> max 0
+        |> min (model.imageSize.width - model.selection.x)
+        
+        height = model.selection.height + resize.current.y - resize.start.y
+        |> max 0
+        |> min (model.imageSize.height - model.selection.y)
+      in
+        { width = width, height = height }
 
 -- Subscriptions
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  case model.move of
-    Nothing ->
-      Sub.none
+  let
+    moveSubscriptions =
+      case model.move of
+        Nothing ->
+          []
 
-    Just _ ->
-      Sub.batch [ Mouse.moves MoveAt, Mouse.ups MoveEnd ]
+        Just _ ->
+          [ Mouse.moves MoveAt, Mouse.ups MoveEnd ]
+          
+    resizeSubscriptions =
+      case model.resize of
+        Nothing ->
+          []
+
+        Just _ ->
+          [ Mouse.moves ResizeAt, Mouse.ups ResizeEnd ]
+  in
+    Sub.batch (moveSubscriptions ++ resizeSubscriptions)
 
 -- View
 
@@ -192,13 +246,14 @@ selectionStyle : Model -> Attribute Msg
 selectionStyle model =
   let
     {x,y} = getPosition model
+    {width,height} = getSize model
   in
     style
       [ ("position", "absolute")
       , ("left", px x)
       , ("top", px y)
-      , ("width", px model.selection.width)
-      , ("height", px model.selection.height)
+      , ("width", px width)
+      , ("height", px height)
       , ("cursor", "move")
       ]
         

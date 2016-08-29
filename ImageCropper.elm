@@ -1,7 +1,7 @@
 import Html exposing (..)
 import Html.App
 import Html.Attributes exposing (style, src, width, height, value, type')
-import Html.Events exposing (..)
+import Html.Events exposing (onInput, onWithOptions)
 import String exposing (toInt)
 import Mouse exposing (Position)
 import Json.Decode as Json
@@ -20,7 +20,8 @@ main =
 type alias Model =
   { imageSize : Size
   , selection : Area
-  , drag : Maybe Drag
+  , move : Maybe Move
+  , resize : Maybe Resize
   }
 
 type alias Size =
@@ -35,8 +36,14 @@ type alias Area =
   , height : Int
   }
 
-type alias Drag =
+type alias Move =
   { start : Mouse.Position
+  , current : Mouse.Position
+  }
+
+type alias Resize =
+  { direction : Direction
+  , start : Mouse.Position
   , current : Mouse.Position
   }
 
@@ -57,7 +64,8 @@ init =
         , width = 120
         , height = 70
         }
-    , drag = Nothing
+    , move = Nothing
+    , resize = Nothing
     }
   , Cmd.none
   )
@@ -69,14 +77,17 @@ type Msg
   | Top String
   | Width String
   | Height String
-  | DragStart Mouse.Position
-  | DragAt Mouse.Position
-  | DragEnd Mouse.Position
+  | MoveStart Mouse.Position
+  | MoveAt Mouse.Position
+  | MoveEnd Mouse.Position
+  | ResizeStart Direction Mouse.Position
+  | ResizeAt Mouse.Position
+  | ResizeEnd Mouse.Position
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let
-    {imageSize,selection,drag} = model
+    {imageSize,selection,move} = model
   in
     case msg of
       Left value ->
@@ -84,45 +95,60 @@ update msg model =
           newSelection = { selection | x = Result.withDefault selection.x (toInt value) }
         in
           ({ model | selection = newSelection }, Cmd.none)
+          
       Top value ->
         let
           newSelection = { selection | y = Result.withDefault selection.y (toInt value) }
         in
           ({ model | selection = newSelection }, Cmd.none)
+          
       Width value ->
         let
           newSelection = { selection | width = Result.withDefault selection.width (toInt value) }
         in
           ({ model | selection = newSelection }, Cmd.none)
+      
       Height value ->
         let
           newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
         in
           ({ model | selection = newSelection }, Cmd.none)
-      DragStart xy ->
-        ({ model | drag = Just { start = xy, current = xy } }, Cmd.none)
-      DragAt xy ->
-        ({ model | drag = (Maybe.map (\{start} -> Drag start xy) drag) }, Cmd.none)
-      DragEnd _ ->
+      
+      MoveStart xy ->
+        ({ model | move = Just { start = xy, current = xy } }, Cmd.none)
+      
+      MoveAt xy ->
+        ({ model | move = (Maybe.map (\{start} -> Move start xy) move) }, Cmd.none)
+      
+      MoveEnd _ ->
         let
           {x,y} = getPosition model
           newSelection = { selection | x = x, y = y }
         in
-        ({ model | selection = newSelection, drag = Nothing }, Cmd.none)
+        ({ model | selection = newSelection, move = Nothing }, Cmd.none)
+      
+      ResizeStart orientatin xy ->
+        (model, Cmd.none)
+      
+      ResizeAt xy ->
+        (model, Cmd.none)
+        
+      ResizeEnd xy ->
+        (model, Cmd.none)
 
 getPosition : Model -> Point
 getPosition model =
-  case model.drag of
+  case model.move of
     Nothing ->
       { x = model.selection.x, y = model.selection.y }
     
-    Just drag ->
+    Just move ->
       let
-        x = model.selection.x + drag.current.x - drag.start.x
+        x = model.selection.x + move.current.x - move.start.x
             |> max 0
             |> min (model.imageSize.width - model.selection.width)
     
-        y = model.selection.y + drag.current.y - drag.start.y
+        y = model.selection.y + move.current.y - move.start.y
             |> max 0
             |> min (model.imageSize.height - model.selection.height)
       in
@@ -133,12 +159,12 @@ getPosition model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  case model.drag of
+  case model.move of
     Nothing ->
       Sub.none
 
     Just _ ->
-      Sub.batch [ Mouse.moves DragAt, Mouse.ups DragEnd ]
+      Sub.batch [ Mouse.moves MoveAt, Mouse.ups MoveEnd ]
 
 -- View
 
@@ -149,7 +175,7 @@ view model =
     [ placeholdit model.imageSize
     , div
         [ selectionStyle model
-        , on "mousedown" (Json.map DragStart Mouse.position)
+        , onMouseDown MoveStart
         ]
         (borders ++ dragbars ++ handles)
     , debugForm model.selection
@@ -217,22 +243,23 @@ dragbar position =
   let
     (cssPosition, orientation) = positionCssHelper position
 
-    cursor =
+    (direction, cursor) =
       case position of
         PositionTop ->
-          "n"
+          (North, "n")
 
         PositionRight ->
-          "e"
+          (East, "e")
 
         PositionBottom ->
-          "s"
+          (South, "s")
 
         PositionLeft ->
-          "w"
+          (West, "w")
   in
     div
-      [ style
+      [ onMouseDown (ResizeStart direction)
+      , style
           [ ("position", "absolute")
           , ("width", if orientation == Horizontal then "100%" else "9px")
           , ("height", if orientation == Vertical then "100%" else "9px")
@@ -257,7 +284,7 @@ handles =
     , West
     ]
 
-handle : HandlePosition -> Html Msg
+handle : Direction -> Html Msg
 handle orientation =
   let
     (horizontalPosition, horizontalSpacing) =
@@ -307,7 +334,8 @@ handle orientation =
           "w"
   in
     div
-      [ style
+      [ onMouseDown (ResizeStart orientation)
+      , style
           [ ("background-color", "rgba(49,28,28,0.58)")
           , ("border", "1px #eee solid")
           , ("width", "9px")
@@ -362,7 +390,7 @@ type Orientation
   = Horizontal
   | Vertical
 
-type HandlePosition
+type Direction
   = North
   | NorthEast
   | East
@@ -390,3 +418,12 @@ positionCssHelper position =
 
     PositionLeft ->
       ("left", Vertical)
+
+onMouseDown : (Mouse.Position -> Msg) -> Attribute Msg
+onMouseDown msg =
+  onWithOptions
+    "mousedown"
+    { stopPropagation = True
+    , preventDefault = True
+    }
+    (Json.map msg Mouse.position)

@@ -17,19 +17,24 @@ main =
   
 init : (Model, Cmd Msg)
 init =
-  ( { selection =
-      { x = 20
-      , y = 10
-      , width = 120
-      , height = 70
-      }
+  ( { imageSize =
+        { width = 200
+        , height = 100
+        }
+    , selection =
+        { x = 20
+        , y = 10
+        , width = 120
+        , height = 70
+        }
     , drag = Nothing
     }
   , Cmd.none
   )
   
 type alias Model =
-  { selection : Area
+  { imageSize : Size
+  , selection : Area
   , drag : Maybe Mouse.Position
   }
 
@@ -37,6 +42,11 @@ type alias Area =
   { x : Int
   , y : Int
   , width : Int
+  , height : Int
+  }
+
+type alias Size =
+  { width : Int
   , height : Int
   }
 
@@ -97,7 +107,7 @@ view : Model -> Html Msg
 view model =
   div
     []
-    [ placeholdit 200 100
+    [ placeholdit model.imageSize
     , div
         [ selectionStyle model.selection
         , onMouseDown
@@ -137,11 +147,11 @@ debugForm selection =
     ]
 
 
-placeholdit : Int -> Int -> Html Msg
-placeholdit w h =
-  img [ src ("https://placehold.it/" ++ toString w ++ "x" ++ toString h)
-      , width w
-      , height h
+placeholdit : Size -> Html Msg
+placeholdit size =
+  img [ src ("https://placehold.it/" ++ toString size.width ++ "x" ++ toString size.height)
+      , width size.width
+      , height size.height
       ] []
 
 type Position = PositionTop | PositionRight | PositionBottom | PositionLeft

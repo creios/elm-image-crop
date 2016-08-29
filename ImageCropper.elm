@@ -338,9 +338,22 @@ update msg model =
           ({ model | drag = newDrag }, Cmd.none)
       DragAt position ->
         let
-          drag = Maybe.withDefault { x = 0, y = 0 } model.drag
-          x = model.selection.x + position.x - drag.x
-          y = model.selection.y + position.y - drag.y
+          drag = Maybe.withDefault position model.drag
+
+          calculatedX = model.selection.x + position.x - drag.x
+          x =
+            if calculatedX >= 0 && calculatedX + selection.width <= model.imageSize.width then
+              calculatedX
+            else
+              selection.x
+      
+          calculatedY = model.selection.y + position.y - drag.y
+          y =
+            if calculatedY >= 0 && calculatedY + selection.height <= model.imageSize.height then
+              calculatedY
+            else
+              selection.y
+
           newSelection =
             { selection | x = x, y = y }
           newDrag = Just position

@@ -16,7 +16,7 @@ main =
     }
 
 -- Model
-  
+
 type alias Model =
   { imageSize : Size
   , selection : Area
@@ -51,7 +51,7 @@ type alias Point =
   { x : Int
   , y : Int
   }
-  
+
 init : (Model, Cmd Msg)
 init =
   ( { imageSize =
@@ -99,42 +99,38 @@ updateHelper msg model =
           newSelection = { selection | x = Result.withDefault selection.x (toInt value) }
         in
           { model | selection = newSelection }
-          
+
       Top value ->
         let
           newSelection = { selection | y = Result.withDefault selection.y (toInt value) }
         in
           { model | selection = newSelection }
-          
+
       Width value ->
         let
           newSelection = { selection | width = Result.withDefault selection.width (toInt value) }
         in
           { model | selection = newSelection }
-      
+
       Height value ->
         let
           newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
         in
           { model | selection = newSelection }
-      
+
       MoveStart xy ->
         { model | move = Just { start = xy, current = xy } }
-      
+
       MoveAt xy ->
         let
           updateCurrent =
             \move -> { move | current = xy }
         in
           { model | move = (Maybe.map updateCurrent move) }
-      
+
       MoveEnd _ ->
-        let
-          {x,y} = getPosition model
-          newSelection = { selection | x = x, y = y }
-        in
-        { model | selection = newSelection, move = Nothing }
-      
+        { model | selection = (applyMove model selection), move = Nothing }
+
       ResizeStart direction xy ->
         let
           resize =
@@ -144,58 +140,98 @@ updateHelper msg model =
             }
         in
           { model | resize = Just resize }
-      
+
       ResizeAt xy ->
         let
           updateCurrent =
             \resize -> { resize | current = xy}
         in
           { model | resize = (Maybe.map updateCurrent resize) }
-        
-      ResizeEnd xy ->
-        let
-          {width,height} = getSize model
-          newSelection = { selection | width = width, height = height }
-        in
-        { model | selection = newSelection, resize = Nothing }
 
-getPosition : Model -> Point
-getPosition model =
+      ResizeEnd xy ->
+        { model | selection = (applyResize model selection), resize = Nothing }
+
+getSelection : Model -> Area
+getSelection model =
+  model.selection
+  |> applyMove model
+  |> applyResize model
+
+applyMove : Model -> Area -> Area
+applyMove model selection =
   case model.move of
     Nothing ->
-      { x = model.selection.x, y = model.selection.y }
-    
+      selection
+
     Just move ->
       let
-        x = model.selection.x + move.current.x - move.start.x
+        x = selection.x + move.current.x - move.start.x
             |> max 0
-            |> min (model.imageSize.width - model.selection.width)
-    
-        y = model.selection.y + move.current.y - move.start.y
-            |> max 0
-            |> min (model.imageSize.height - model.selection.height)
-      in
-        { x = x, y = y }
+            |> min (model.imageSize.width - selection.width)
 
-getSize : Model -> Size
-getSize model =
+        y = selection.y + move.current.y - move.start.y
+            |> max 0
+            |> min (model.imageSize.height - selection.height)
+      in
+        { selection | x = x, y = y }
+
+applyResize : Model -> Area -> Area
+applyResize model selection =
   case model.resize of
     Nothing ->
-      { width = model.selection.width
-      , height = model.selection.height
-      }
-    
+      selection
+
     Just resize ->
       let
-        width = model.selection.width + resize.current.x - resize.start.x
-        |> max 0
-        |> min (model.imageSize.width - model.selection.x)
-        
-        height = model.selection.height + resize.current.y - resize.start.y
-        |> max 0
-        |> min (model.imageSize.height - model.selection.y)
+
+        horizontalMovement = resize.current.x - resize.start.x
+        verticalMovement = resize.current.y - resize.start.y
+
+        x =
+          if List.member resize.direction [NorthWest, West, SouthWest] then
+            (selection.x + horizontalMovement)
+              |> max 0
+              |> min (selection.x + selection.width)
+          else
+            selection.x
+
+        y =
+          if List.member resize.direction [NorthWest, North, NorthEast] then
+            (selection.y + verticalMovement)
+              |> max 0
+              |> min (selection.y + selection.height)
+          else
+            selection.y
+
+        width =
+          if List.member resize.direction [SouthWest, West, NorthWest] then
+            selection.width - horizontalMovement
+              |> max 0
+              |> min (selection.x + selection.width)
+
+          else if List.member resize.direction [NorthEast, East, SouthEast] then
+            selection.width + horizontalMovement
+              |> max 0
+              |> min (model.imageSize.width - selection.x)
+
+          else
+            selection.width
+
+        height =
+          if List.member resize.direction [NorthWest, North, NorthEast] then
+            selection.height - verticalMovement
+              |> max 0
+              |> min (selection.y + selection.height)
+
+          else if List.member resize.direction [SouthWest, South, SouthEast] then
+            selection.height + verticalMovement
+              |> max 0
+              |> min (model.imageSize.height - selection.y)
+
+          else
+            selection.height
       in
-        { width = width, height = height }
+        Debug.log "applyResize" (Area x y width height)
 
 -- Subscriptions
 
@@ -209,7 +245,7 @@ subscriptions model =
 
         Just _ ->
           [ Mouse.moves MoveAt, Mouse.ups MoveEnd ]
-          
+
     resizeSubscriptions =
       case model.resize of
         Nothing ->
@@ -245,8 +281,7 @@ placeholdit size =
 selectionStyle : Model -> Attribute Msg
 selectionStyle model =
   let
-    {x,y} = getPosition model
-    {width,height} = getSize model
+    {x,y,width,height} = getSelection model
   in
     style
       [ ("position", "absolute")
@@ -256,7 +291,7 @@ selectionStyle model =
       , ("height", px height)
       , ("cursor", "move")
       ]
-        
+
 borders : List (Html Msg)
 borders =
   List.map
@@ -366,10 +401,10 @@ handle orientation =
       case orientation of
         NorthWest ->
           "nw"
-        
+
         North ->
           "n"
-    
+
         NorthEast ->
           "ne"
 
@@ -440,7 +475,7 @@ type Position
   | PositionRight
   | PositionBottom
   | PositionLeft
-  
+
 type Orientation
   = Horizontal
   | Vertical
@@ -464,7 +499,7 @@ positionCssHelper position =
   case position of
     PositionTop ->
       ("top", Horizontal)
-    
+
     PositionRight ->
       ("right", Vertical)
 

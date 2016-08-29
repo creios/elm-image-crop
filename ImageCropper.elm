@@ -155,6 +155,12 @@ getSelection model =
   |> applyMove model
   |> applyResize model
 
+atLeast : comparable -> comparable -> comparable
+atLeast = max
+
+atMost : comparable -> comparable -> comparable
+atMost = min
+
 applyMove : Model -> Area -> Area
 applyMove model selection =
   case model.move of
@@ -164,12 +170,12 @@ applyMove model selection =
     Just move ->
       let
         x = selection.x + move.current.x - move.start.x
-            |> max 0
-            |> min (model.imageSize.width - selection.width)
+            |> atLeast 0
+            |> atMost (model.imageSize.width - selection.width)
 
         y = selection.y + move.current.y - move.start.y
-            |> max 0
-            |> min (model.imageSize.height - selection.height)
+            |> atLeast 0
+            |> atMost (model.imageSize.height - selection.height)
       in
         { selection | x = x, y = y }
 
@@ -188,29 +194,29 @@ applyResize model selection =
         x =
           if List.member resize.direction [NorthWest, West, SouthWest] then
             (selection.x + horizontalMovement)
-              |> max 0
-              |> min (selection.x + selection.width)
+              |> atLeast 0
+              |> atMost (selection.x + selection.width)
           else
             selection.x
 
         y =
           if List.member resize.direction [NorthWest, North, NorthEast] then
             (selection.y + verticalMovement)
-              |> max 0
-              |> min (selection.y + selection.height)
+              |> atLeast 0
+              |> atMost (selection.y + selection.height)
           else
             selection.y
 
         width =
           if List.member resize.direction [SouthWest, West, NorthWest] then
             selection.width - horizontalMovement
-              |> max 0
-              |> min (selection.x + selection.width)
+              |> atLeast 0
+              |> atMost (selection.x + selection.width)
 
           else if List.member resize.direction [NorthEast, East, SouthEast] then
             selection.width + horizontalMovement
-              |> max 0
-              |> min (model.imageSize.width - selection.x)
+              |> atLeast 0
+              |> atMost (model.imageSize.width - selection.x)
 
           else
             selection.width
@@ -218,13 +224,13 @@ applyResize model selection =
         height =
           if List.member resize.direction [NorthWest, North, NorthEast] then
             selection.height - verticalMovement
-              |> max 0
-              |> min (selection.y + selection.height)
+              |> atLeast 0
+              |> atMost (selection.y + selection.height)
 
           else if List.member resize.direction [SouthWest, South, SouthEast] then
             selection.height + verticalMovement
-              |> max 0
-              |> min (model.imageSize.height - selection.y)
+              |> atLeast 0
+              |> atMost (model.imageSize.height - selection.y)
 
           else
             selection.height

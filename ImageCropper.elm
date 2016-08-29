@@ -14,6 +14,26 @@ main =
     , update = update
     , subscriptions = subscriptions
     }
+
+-- Model
+  
+type alias Model =
+  { imageSize : Size
+  , selection : Area
+  , drag : Maybe Mouse.Position
+  }
+
+type alias Size =
+  { width : Int
+  , height : Int
+  }
+
+type alias Area =
+  { x : Int
+  , y : Int
+  , width : Int
+  , height : Int
+  }
   
 init : (Model, Cmd Msg)
 init =
@@ -31,62 +51,103 @@ init =
     }
   , Cmd.none
   )
-  
-type alias Model =
-  { imageSize : Size
-  , selection : Area
-  , drag : Maybe Mouse.Position
-  }
 
-type alias Area =
-  { x : Int
-  , y : Int
-  , width : Int
-  , height : Int
-  }
+-- Update
 
-type alias Size =
-  { width : Int
-  , height : Int
-  }
+type Msg
+  = Left String
+  | Top String
+  | Width String
+  | Height String
+  | DragStart Mouse.Position
+  | DragAt Mouse.Position
+  | DragEnd Mouse.Position
 
-borders : List (Html Msg)
-borders =
-  List.map
-    border
-    [ PositionTop
-    , PositionRight
-    , PositionBottom
-    , PositionLeft
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  let
+    selection = model.selection
+  in
+    case msg of
+      Left value ->
+        let
+          newSelection = { selection | x = Result.withDefault selection.x (toInt value) }
+        in
+          ({ model | selection = newSelection }, Cmd.none)
+      Top value ->
+        let
+          newSelection = { selection | y = Result.withDefault selection.y (toInt value) }
+        in
+          ({ model | selection = newSelection }, Cmd.none)
+      Width value ->
+        let
+          newSelection = { selection | width = Result.withDefault selection.width (toInt value) }
+        in
+          ({ model | selection = newSelection }, Cmd.none)
+      Height value ->
+        let
+          newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
+        in
+          ({ model | selection = newSelection }, Cmd.none)
+      DragStart position ->
+        ({ model | drag = Just position }, Cmd.none)
+      DragAt position ->
+        let
+          drag = Maybe.withDefault position model.drag
+
+          calculatedX = selection.x + position.x - drag.x
+          x =
+            if calculatedX >= 0 && calculatedX + selection.width <= model.imageSize.width then
+              calculatedX
+            else
+              selection.x
+      
+          calculatedY = selection.y + position.y - drag.y
+          y =
+            if calculatedY >= 0 && calculatedY + selection.height <= model.imageSize.height then
+              calculatedY
+            else
+              selection.y
+
+          newSelection =
+            { selection | x = x, y = y }
+        in
+          ({ model | selection = newSelection, drag = Just position }, Cmd.none)
+      DragEnd position ->
+        ({ model | drag = Nothing }, Cmd.none)
+
+-- Subscriptions
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  case model.drag of
+    Nothing ->
+      Sub.none
+
+    Just _ ->
+      Sub.batch [ Mouse.moves DragAt, Mouse.ups DragEnd ]
+
+-- View
+
+view : Model -> Html Msg
+view model =
+  div
+    []
+    [ placeholdit model.imageSize
+    , div
+        [ selectionStyle model.selection
+        , on "mousedown" (Json.map DragStart Mouse.position)
+        ]
+        (borders ++ dragbars ++ handles)
+    , debugForm model.selection
     ]
 
-dragbars : List (Html Msg)
-dragbars =
-  List.map
-    dragbar
-    [ PositionTop
-    , PositionRight
-    , PositionBottom
-    , PositionLeft
-    ]
-
-handles : List (Html Msg)
-handles =
-  List.map
-    handle
-    [ NorthWest
-    , North
-    , NorthEast
-    , East
-    , SouthEast
-    , South
-    , SouthWest
-    , West
-    ]
-
-px : Int -> String
-px value =
-  toString value ++ "px"
+placeholdit : Size -> Html Msg
+placeholdit size =
+  img [ src ("https://placehold.it/" ++ toString size.width ++ "x" ++ toString size.height)
+      , width size.width
+      , height size.height
+      ] []
 
 selectionStyle : Area -> Attribute Msg
 selectionStyle selection =
@@ -98,64 +159,16 @@ selectionStyle selection =
     , ("height", px selection.height)
     , ("cursor", "move")
     ]
-
-onMouseDown : Attribute Msg
-onMouseDown =
-  on "mousedown" (Json.map DragStart Mouse.position)
-
-view : Model -> Html Msg
-view model =
-  div
-    []
-    [ placeholdit model.imageSize
-    , div
-        [ selectionStyle model.selection
-        , onMouseDown
-        ]
-        (borders ++ dragbars ++ handles)
-    , debugForm model.selection
+        
+borders : List (Html Msg)
+borders =
+  List.map
+    border
+    [ PositionTop
+    , PositionRight
+    , PositionBottom
+    , PositionLeft
     ]
-
-debugForm : Area -> Html Msg
-debugForm selection =
-  Html.form
-    []
-    [ label [] [ text "X" ]
-    , input
-      [ type' "number"
-      , value (toString selection.x)
-      , onInput Left
-      ] []
-    , label [] [ text "Y" ]
-    , input
-      [ type' "number"
-      , value (toString selection.y)
-      , onInput Top
-      ] []
-    , label [] [ text "Breite" ]
-    , input
-      [ type' "number"
-      , value (toString selection.width)
-      , onInput Width
-      ] []
-    , label [] [ text "Höhe" ]
-    , input
-      [ type' "number"
-      , value (toString selection.height)
-      , onInput Height
-      ] []
-    ]
-
-
-placeholdit : Size -> Html Msg
-placeholdit size =
-  img [ src ("https://placehold.it/" ++ toString size.width ++ "x" ++ toString size.height)
-      , width size.width
-      , height size.height
-      ] []
-
-type Position = PositionTop | PositionRight | PositionBottom | PositionLeft
-type Orientation = Horizontal | Vertical
 
 border : Position -> Html Msg
 border position =
@@ -173,15 +186,60 @@ border position =
         ]
       ] []
 
-type HandlePosition
-  = North
-  | NorthEast
-  | East
-  | SouthEast
-  | South
-  | SouthWest
-  | West
-  | NorthWest
+dragbars : List (Html Msg)
+dragbars =
+  List.map
+    dragbar
+    [ PositionTop
+    , PositionRight
+    , PositionBottom
+    , PositionLeft
+    ]
+
+dragbar : Position -> Html Msg
+dragbar position =
+  let
+    (cssPosition, orientation) = positionCssHelper position
+
+    cursor =
+      case position of
+        PositionTop ->
+          "n"
+
+        PositionRight ->
+          "e"
+
+        PositionBottom ->
+          "s"
+
+        PositionLeft ->
+          "w"
+  in
+    div
+      [ style
+          [ ("position", "absolute")
+          , ("width", if orientation == Horizontal then "100%" else "9px")
+          , ("height", if orientation == Vertical then "100%" else "9px")
+          , (cssPosition, "0")
+          , ("margin-" ++ cssPosition, "-5px")
+          , ("cursor", cursor ++ "-resize")
+          ]
+      ]
+      []
+
+handles : List (Html Msg)
+handles =
+  List.map
+    handle
+    [ NorthWest
+    , North
+    , NorthEast
+    , East
+    , SouthEast
+    , South
+    , SouthWest
+    , West
+    ]
 
 handle : HandlePosition -> Html Msg
 handle orientation =
@@ -248,36 +306,59 @@ handle orientation =
           ]
       ] []
 
-dragbar : Position -> Html Msg
-dragbar position =
-  let
-    (cssPosition, orientation) = positionCssHelper position
+debugForm : Area -> Html Msg
+debugForm selection =
+  Html.form
+    []
+    [ label [] [ text "X" ]
+    , input
+      [ type' "number"
+      , value (toString selection.x)
+      , onInput Left
+      ] []
+    , label [] [ text "Y" ]
+    , input
+      [ type' "number"
+      , value (toString selection.y)
+      , onInput Top
+      ] []
+    , label [] [ text "Breite" ]
+    , input
+      [ type' "number"
+      , value (toString selection.width)
+      , onInput Width
+      ] []
+    , label [] [ text "Höhe" ]
+    , input
+      [ type' "number"
+      , value (toString selection.height)
+      , onInput Height
+      ] []
+    ]
 
-    cursor =
-      case position of
-        PositionTop ->
-          "n"
+type Position
+  = PositionTop
+  | PositionRight
+  | PositionBottom
+  | PositionLeft
+  
+type Orientation
+  = Horizontal
+  | Vertical
 
-        PositionRight ->
-          "e"
+type HandlePosition
+  = North
+  | NorthEast
+  | East
+  | SouthEast
+  | South
+  | SouthWest
+  | West
+  | NorthWest
 
-        PositionBottom ->
-          "s"
-
-        PositionLeft ->
-          "w"
-  in
-    div
-      [ style
-          [ ("position", "absolute")
-          , ("width", if orientation == Horizontal then "100%" else "9px")
-          , ("height", if orientation == Vertical then "100%" else "9px")
-          , (cssPosition, "0")
-          , ("margin-" ++ cssPosition, "-5px")
-          , ("cursor", cursor ++ "-resize")
-          ]
-      ]
-      []
+px : Int -> String
+px value =
+  toString value ++ "px"
 
 positionCssHelper : Position -> (String, Orientation)
 positionCssHelper position =
@@ -293,80 +374,3 @@ positionCssHelper position =
 
     PositionLeft ->
       ("left", Vertical)
-
-
-
-type Msg
-  = Left String
-  | Top String
-  | Width String
-  | Height String
-  | DragStart Mouse.Position
-  | DragAt Mouse.Position
-  | DragEnd Mouse.Position
-
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
-  let
-    selection = model.selection
-  in
-    case msg of
-      Left value ->
-        let
-          newSelection = { selection | x = Result.withDefault selection.x (toInt value) }
-        in
-          ({ model | selection = newSelection }, Cmd.none)
-      Top value ->
-        let
-          newSelection = { selection | y = Result.withDefault selection.y (toInt value) }
-        in
-          ({ model | selection = newSelection }, Cmd.none)
-      Width value ->
-        let
-          newSelection = { selection | width = Result.withDefault selection.width (toInt value) }
-        in
-          ({ model | selection = newSelection }, Cmd.none)
-      Height value ->
-        let
-          newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
-        in
-          ({ model | selection = newSelection }, Cmd.none)
-      DragStart position ->
-        let
-          newDrag = Just position
-        in
-          ({ model | drag = newDrag }, Cmd.none)
-      DragAt position ->
-        let
-          drag = Maybe.withDefault position model.drag
-
-          calculatedX = model.selection.x + position.x - drag.x
-          x =
-            if calculatedX >= 0 && calculatedX + selection.width <= model.imageSize.width then
-              calculatedX
-            else
-              selection.x
-      
-          calculatedY = model.selection.y + position.y - drag.y
-          y =
-            if calculatedY >= 0 && calculatedY + selection.height <= model.imageSize.height then
-              calculatedY
-            else
-              selection.y
-
-          newSelection =
-            { selection | x = x, y = y }
-          newDrag = Just position
-        in
-          ({ model | selection = newSelection, drag = newDrag }, Cmd.none)
-      DragEnd position ->
-        ({ model | drag = Nothing }, Cmd.none)
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-  case model.drag of
-    Nothing ->
-      Sub.none
-
-    Just _ ->
-      Sub.batch [ Mouse.moves DragAt, Mouse.ups DragEnd ]

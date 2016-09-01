@@ -20,6 +20,7 @@ main =
 type alias Model =
   { imageSize : Size
   , selection : Rectangle
+  , originalSelection : Maybe Rectangle
   , move : Maybe Move
   , resize : Maybe Resize
   }
@@ -71,6 +72,7 @@ init =
             , y = 80
             }
         }
+    , originalSelection = Nothing
     , move = Nothing
     , resize = Nothing
     }
@@ -98,7 +100,7 @@ update msg model =
 updateHelper : Msg -> Model -> Model
 updateHelper msg model =
   let
-    {imageSize,selection,move,resize} = model
+    {imageSize,selection,originalSelection,move,resize} = model
     {topLeft, bottomRight} = selection
   in
     case msg of
@@ -143,16 +145,22 @@ updateHelper msg model =
           { model | selection = newSelection }
 
       MoveStart xy ->
-        { model | move = Just { start = xy, current = xy } }
+        let
+          move = { start = xy, current = xy }
+        in
+          { model | move = Just move, originalSelection = Just selection }
 
       MoveAt xy ->
         let
           updateCurrent move = { move | current = xy }
+          moveUpdated = { model | move = (Maybe.map updateCurrent move) }
+          -- Silly default value
+          baseSelection = Maybe.withDefault selection originalSelection
         in
-          { model | move = (Maybe.map updateCurrent move) }
+          { moveUpdated | selection = (applyMove moveUpdated baseSelection) }
 
       MoveEnd _ ->
-        { model | selection = (applyMove model selection), move = Nothing }
+        { model | originalSelection = Nothing, move = Nothing }
 
       ResizeStart direction xy ->
         let
@@ -162,22 +170,19 @@ updateHelper msg model =
             , current = xy
             }
         in
-          { model | resize = Just resize }
+          { model | resize = Just resize, originalSelection = Just selection }
 
       ResizeAt xy ->
         let
           updateCurrent resize = { resize | current = xy }
+          resizeUpdated = { model | resize = (Maybe.map updateCurrent resize) }
+          -- Silly default value
+          baseSelection = Maybe.withDefault selection originalSelection
         in
-          { model | resize = (Maybe.map updateCurrent resize) }
+          { resizeUpdated | selection = (applyResize resizeUpdated baseSelection) }
 
       ResizeEnd xy ->
-        { model | selection = (applyResize model selection), resize = Nothing }
-
-getSelection : Model -> Rectangle
-getSelection model =
-  model.selection
-  |> applyMove model
-  |> applyResize model
+        { model | originalSelection = Nothing, resize = Nothing }
 
 atLeast : comparable -> comparable -> comparable
 atLeast = max
@@ -331,7 +336,7 @@ placeholdit size =
 selectionStyle : Model -> Attribute Msg
 selectionStyle model =
   let
-    selection = getSelection model
+    selection = model.selection
     {x,y} = selection.topLeft
     {width,height} = rectangleSize selection
   in

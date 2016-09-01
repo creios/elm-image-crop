@@ -19,7 +19,7 @@ main =
 
 type alias Model =
   { imageSize : Size
-  , selection : Area
+  , selection : Rectangle
   , move : Maybe Move
   , resize : Maybe Resize
   }
@@ -29,11 +29,19 @@ type alias Size =
   , height : Int
   }
 
-type alias Area =
+type alias Point =
   { x : Int
   , y : Int
-  , width : Int
-  , height : Int
+  }
+
+type alias Rectangle =
+  { topLeft : Point
+  , bottomRight : Point
+  }
+
+type alias Movement =
+  { horizontal : Int
+  , vertical : Int
   }
 
 type alias Move =
@@ -47,11 +55,6 @@ type alias Resize =
   , current : Mouse.Position
   }
 
-type alias Point =
-  { x : Int
-  , y : Int
-  }
-
 init : (Model, Cmd Msg)
 init =
   ( { imageSize =
@@ -59,10 +62,14 @@ init =
         , height = 200
         }
     , selection =
-        { x = 20
-        , y = 10
-        , width = 120
-        , height = 70
+        { topLeft =
+            { x = 20
+            , y = 10
+            }
+        , bottomRight =
+            { x = 140
+            , y = 80
+            }
         }
     , move = Nothing
     , resize = Nothing
@@ -73,10 +80,10 @@ init =
 -- Update
 
 type Msg
-  = Left String
-  | Top String
-  | Width String
-  | Height String
+  = TopLeftX String
+  | TopLeftY String
+  | BottomRightX String
+  | BottomRightY String
   | MoveStart Mouse.Position
   | MoveAt Mouse.Position
   | MoveEnd Mouse.Position
@@ -92,29 +99,46 @@ updateHelper : Msg -> Model -> Model
 updateHelper msg model =
   let
     {imageSize,selection,move,resize} = model
+    {topLeft, bottomRight} = selection
   in
     case msg of
-      Left value ->
+      TopLeftX value ->
         let
-          newSelection = { selection | x = Result.withDefault selection.x (toInt value) }
+          newTopLeft =
+            { topLeft | x = Result.withDefault topLeft.x (toInt value) }
+
+          newSelection =
+            { selection | topLeft = newTopLeft  }
         in
           { model | selection = newSelection }
 
-      Top value ->
+      TopLeftY value ->
         let
-          newSelection = { selection | y = Result.withDefault selection.y (toInt value) }
+          newTopLeft =
+            { topLeft | y = Result.withDefault topLeft.y (toInt value) }
+
+          newSelection =
+            { selection | topLeft = newTopLeft }
         in
           { model | selection = newSelection }
 
-      Width value ->
+      BottomRightX value ->
         let
-          newSelection = { selection | width = Result.withDefault selection.width (toInt value) }
+          newBottomRight =
+            { bottomRight | x = Result.withDefault bottomRight.x (toInt value) }
+
+          newSelection =
+            { selection | bottomRight = newBottomRight  }
         in
           { model | selection = newSelection }
 
-      Height value ->
+      BottomRightY value ->
         let
-          newSelection = { selection | height = Result.withDefault selection.height (toInt value) }
+          newBottomRight =
+            { bottomRight | y = Result.withDefault bottomRight.y (toInt value) }
+
+          newSelection =
+            { selection | bottomRight = newBottomRight  }
         in
           { model | selection = newSelection }
 
@@ -149,7 +173,7 @@ updateHelper msg model =
       ResizeEnd xy ->
         { model | selection = (applyResize model selection), resize = Nothing }
 
-getSelection : Model -> Area
+getSelection : Model -> Rectangle
 getSelection model =
   model.selection
   |> applyMove model
@@ -161,7 +185,7 @@ atLeast = max
 atMost : comparable -> comparable -> comparable
 atMost = min
 
-applyMove : Model -> Area -> Area
+applyMove : Model -> Rectangle -> Rectangle
 applyMove model selection =
   case model.move of
     Nothing ->
@@ -169,17 +193,33 @@ applyMove model selection =
 
     Just move ->
       let
-        x = selection.x + move.current.x - move.start.x
-            |> atLeast 0
-            |> atMost (model.imageSize.width - selection.width)
+        movement =
+          { horizontal =
+              move.current.x - move.start.x
+              |> atLeast (-selection.topLeft.x)
+              |> atMost (model.imageSize.width - selection.bottomRight.x)
 
-        y = selection.y + move.current.y - move.start.y
-            |> atLeast 0
-            |> atMost (model.imageSize.height - selection.height)
+          , vertical =
+              move.current.y - move.start.y
+              |> atLeast (-selection.topLeft.y)
+              |> atMost (model.imageSize.height - selection.bottomRight.y)
+          }
       in
-        { selection | x = x, y = y }
+         moveRectangle movement selection
 
-applyResize : Model -> Area -> Area
+moveRectangle : Movement -> Rectangle -> Rectangle
+moveRectangle movement rectangle =
+  { topLeft = movePoint movement rectangle.topLeft
+  , bottomRight = movePoint movement rectangle.bottomRight
+  }
+    
+movePoint : Movement -> Point -> Point
+movePoint movement point =
+  { x = point.x + movement.horizontal
+  , y = point.y + movement.vertical
+  }
+
+applyResize : Model -> Rectangle -> Rectangle
 applyResize model selection =
   case model.resize of
     Nothing ->
@@ -191,51 +231,57 @@ applyResize model selection =
         horizontalMovement = resize.current.x - resize.start.x
         verticalMovement = resize.current.y - resize.start.y
 
-        x =
+        {topLeft,bottomRight} = selection
+        {width,height} = rectangleSize selection
+
+        topLeftX =
           if List.member resize.direction [NorthWest, West, SouthWest] then
-            (selection.x + horizontalMovement)
+            (topLeft.x + horizontalMovement)
               |> atLeast 0
-              |> atMost (selection.x + selection.width)
+              |> atMost (topLeft.x + width)
           else
-            selection.x
+            topLeft.x
 
-        y =
+        topLeftY =
           if List.member resize.direction [NorthWest, North, NorthEast] then
-            (selection.y + verticalMovement)
+            (topLeft.y + verticalMovement)
               |> atLeast 0
-              |> atMost (selection.y + selection.height)
+              |> atMost (topLeft.y + height)
           else
-            selection.y
+            topLeft.y
 
-        width =
-          if List.member resize.direction [SouthWest, West, NorthWest] then
-            selection.width - horizontalMovement
-              |> atLeast 0
-              |> atMost (selection.x + selection.width)
-
-          else if List.member resize.direction [NorthEast, East, SouthEast] then
-            selection.width + horizontalMovement
-              |> atLeast 0
-              |> atMost (model.imageSize.width - selection.x)
-
+        bottomRightX =
+          if List.member resize.direction [NorthEast, East, SouthEast] then
+            (bottomRight.x + horizontalMovement)
+              |> atLeast topLeft.x
+              |> atMost (model.imageSize.width)
           else
-            selection.width
+            bottomRight.x
 
-        height =
-          if List.member resize.direction [NorthWest, North, NorthEast] then
-            selection.height - verticalMovement
-              |> atLeast 0
-              |> atMost (selection.y + selection.height)
-
-          else if List.member resize.direction [SouthWest, South, SouthEast] then
-            selection.height + verticalMovement
-              |> atLeast 0
-              |> atMost (model.imageSize.height - selection.y)
-
+        bottomRightY =
+          if List.member resize.direction [SouthWest, South, SouthEast] then
+            (bottomRight.y + verticalMovement)
+              |> atLeast topLeft.y
+              |> atMost (model.imageSize.height)
           else
-            selection.height
+            bottomRight.y
+
       in
-        Area x y width height
+        { topLeft =
+            { x = topLeftX
+            , y = topLeftY
+            }
+        , bottomRight =
+            { x = bottomRightX
+            , y = bottomRightY
+            }
+        }
+
+rectangleSize : Rectangle -> Size
+rectangleSize {topLeft,bottomRight} =
+  { width = bottomRight.x - topLeft.x
+  , height = bottomRight.y - topLeft.y
+  }
 
 -- Subscriptions
 
@@ -285,7 +331,9 @@ placeholdit size =
 selectionStyle : Model -> Attribute Msg
 selectionStyle model =
   let
-    {x,y,width,height} = getSelection model
+    selection = getSelection model
+    {x,y} = selection.topLeft
+    {width,height} = rectangleSize selection
   in
     style
       [ ("position", "absolute")
@@ -444,34 +492,35 @@ handle orientation =
           ]
       ] []
 
-debugForm : Area -> Html Msg
+debugForm : Rectangle -> Html Msg
 debugForm selection =
   Html.form
     []
-    [ label [] [ text "X" ]
+    [ text "("
     , input
       [ type' "number"
-      , value (toString selection.x)
-      , onInput Left
+      , value (toString selection.topLeft.x)
+      , onInput TopLeftX
       ] []
-    , label [] [ text "Y" ]
+    , text "|"
     , input
       [ type' "number"
-      , value (toString selection.y)
-      , onInput Top
+      , value (toString selection.topLeft.y)
+      , onInput TopLeftY
       ] []
-    , label [] [ text "Breite" ]
+    , text "), ("
     , input
       [ type' "number"
-      , value (toString selection.width)
-      , onInput Width
+      , value (toString selection.bottomRight.x)
+      , onInput BottomRightX
       ] []
-    , label [] [ text "Höhe" ]
+    , text "|"
     , input
       [ type' "number"
-      , value (toString selection.height)
-      , onInput Height
+      , value (toString selection.bottomRight.y)
+      , onInput BottomRightY
       ] []
+    , text ")"
     ]
 
 type Position

@@ -7,6 +7,7 @@ import Mouse exposing (Position)
 import Json.Decode as Json
 
 
+main : Program Never
 main =
   Html.App.program
     { init = init

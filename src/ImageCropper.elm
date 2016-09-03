@@ -20,7 +20,6 @@ main =
 type alias Model =
   { imageSize : Size
   , selection : Rectangle
-  , originalSelection : Maybe Rectangle
   , move : Maybe Move
   , resize : Maybe Resize
   }
@@ -47,13 +46,13 @@ type alias Movement =
 
 type alias Move =
   { start : Mouse.Position
-  , current : Mouse.Position
+  , originalSelection: Rectangle
   }
 
 type alias Resize =
   { direction : Direction
   , start : Mouse.Position
-  , current : Mouse.Position
+  , originalSelection: Rectangle
   }
 
 init : (Model, Cmd Msg)
@@ -72,7 +71,6 @@ init =
             , y = 80
             }
         }
-    , originalSelection = Nothing
     , move = Nothing
     , resize = Nothing
     }
@@ -100,7 +98,7 @@ update msg model =
 updateHelper : Msg -> Model -> Model
 updateHelper msg model =
   let
-    {imageSize,selection,originalSelection,move,resize} = model
+    {imageSize,selection} = model
     {topLeft, bottomRight} = selection
   in
     case msg of
@@ -146,43 +144,50 @@ updateHelper msg model =
 
       MoveStart xy ->
         let
-          move = { start = xy, current = xy }
+          move =
+            { start = xy
+            , originalSelection = selection
+            }
         in
-          { model | move = Just move, originalSelection = Just selection }
+          { model | move = Just move }
 
       MoveAt xy ->
-        let
-          updateCurrent move = { move | current = xy }
-          moveUpdated = { model | move = (Maybe.map updateCurrent move) }
-          -- Silly default value
-          baseSelection = Maybe.withDefault selection originalSelection
-        in
-          { moveUpdated | selection = (applyMove moveUpdated baseSelection) }
+        case model.move of
+          Just move ->
+            let
+              newSelection = moveSelection imageSize move xy
+            in
+              { model | selection = newSelection }
+          
+          Nothing ->
+            model
 
       MoveEnd _ ->
-        { model | originalSelection = Nothing, move = Nothing }
+        { model | move = Nothing }
 
       ResizeStart direction xy ->
         let
           resize =
             { direction = direction
             , start = xy
-            , current = xy
+            , originalSelection = selection
             }
         in
-          { model | resize = Just resize, originalSelection = Just selection }
+          { model | resize = Just resize }
 
       ResizeAt xy ->
-        let
-          updateCurrent resize = { resize | current = xy }
-          resizeUpdated = { model | resize = (Maybe.map updateCurrent resize) }
-          -- Silly default value
-          baseSelection = Maybe.withDefault selection originalSelection
-        in
-          { resizeUpdated | selection = (applyResize resizeUpdated baseSelection) }
+        case model.resize of
+          Just resize ->
+            let
+              newSelection = resizeSelection imageSize resize xy
+            in
+              { model | selection = newSelection }
+
+          Nothing ->
+            model
 
       ResizeEnd xy ->
-        { model | originalSelection = Nothing, resize = Nothing }
+        { model | resize = Nothing }
 
 atLeast : comparable -> comparable -> comparable
 atLeast = max
@@ -190,27 +195,24 @@ atLeast = max
 atMost : comparable -> comparable -> comparable
 atMost = min
 
-applyMove : Model -> Rectangle -> Rectangle
-applyMove model selection =
-  case model.move of
-    Nothing ->
-      selection
+moveSelection : Size -> Move -> Mouse.Position -> Rectangle
+moveSelection imageSize move current =
+  let
+    selection = move.originalSelection
 
-    Just move ->
-      let
-        movement =
-          { horizontal =
-              move.current.x - move.start.x
-              |> atLeast (-selection.topLeft.x)
-              |> atMost (model.imageSize.width - selection.bottomRight.x)
+    movement =
+      { horizontal =
+          current.x - move.start.x
+          |> atLeast (-selection.topLeft.x)
+          |> atMost (imageSize.width - selection.bottomRight.x)
 
-          , vertical =
-              move.current.y - move.start.y
-              |> atLeast (-selection.topLeft.y)
-              |> atMost (model.imageSize.height - selection.bottomRight.y)
-          }
-      in
-         moveRectangle movement selection
+      , vertical =
+          current.y - move.start.y
+          |> atLeast (-selection.topLeft.y)
+          |> atMost (imageSize.height - selection.bottomRight.y)
+      }
+  in
+     moveRectangle movement move.originalSelection
 
 moveRectangle : Movement -> Rectangle -> Rectangle
 moveRectangle movement rectangle =
@@ -224,63 +226,57 @@ movePoint movement point =
   , y = point.y + movement.vertical
   }
 
-applyResize : Model -> Rectangle -> Rectangle
-applyResize model selection =
-  case model.resize of
-    Nothing ->
-      selection
+resizeSelection : Size -> Resize -> Mouse.Position -> Rectangle
+resizeSelection imageSize resize current =
+  let
+    horizontalMovement = current.x - resize.start.x
+    verticalMovement = current.y - resize.start.y
 
-    Just resize ->
-      let
+    {topLeft,bottomRight} = resize.originalSelection
+    {width,height} = rectangleSize resize.originalSelection
 
-        horizontalMovement = resize.current.x - resize.start.x
-        verticalMovement = resize.current.y - resize.start.y
+    topLeftX =
+      if List.member resize.direction [NorthWest, West, SouthWest] then
+        (topLeft.x + horizontalMovement)
+          |> atLeast 0
+          |> atMost (topLeft.x + width)
+      else
+        topLeft.x
 
-        {topLeft,bottomRight} = selection
-        {width,height} = rectangleSize selection
+    topLeftY =
+      if List.member resize.direction [NorthWest, North, NorthEast] then
+        (topLeft.y + verticalMovement)
+          |> atLeast 0
+          |> atMost (topLeft.y + height)
+      else
+        topLeft.y
 
-        topLeftX =
-          if List.member resize.direction [NorthWest, West, SouthWest] then
-            (topLeft.x + horizontalMovement)
-              |> atLeast 0
-              |> atMost (topLeft.x + width)
-          else
-            topLeft.x
+    bottomRightX =
+      if List.member resize.direction [NorthEast, East, SouthEast] then
+        (bottomRight.x + horizontalMovement)
+          |> atLeast topLeft.x
+          |> atMost (imageSize.width)
+      else
+        bottomRight.x
 
-        topLeftY =
-          if List.member resize.direction [NorthWest, North, NorthEast] then
-            (topLeft.y + verticalMovement)
-              |> atLeast 0
-              |> atMost (topLeft.y + height)
-          else
-            topLeft.y
+    bottomRightY =
+      if List.member resize.direction [SouthWest, South, SouthEast] then
+        (bottomRight.y + verticalMovement)
+          |> atLeast topLeft.y
+          |> atMost (imageSize.height)
+      else
+        bottomRight.y
 
-        bottomRightX =
-          if List.member resize.direction [NorthEast, East, SouthEast] then
-            (bottomRight.x + horizontalMovement)
-              |> atLeast topLeft.x
-              |> atMost (model.imageSize.width)
-          else
-            bottomRight.x
-
-        bottomRightY =
-          if List.member resize.direction [SouthWest, South, SouthEast] then
-            (bottomRight.y + verticalMovement)
-              |> atLeast topLeft.y
-              |> atMost (model.imageSize.height)
-          else
-            bottomRight.y
-
-      in
-        { topLeft =
-            { x = topLeftX
-            , y = topLeftY
-            }
-        , bottomRight =
-            { x = bottomRightX
-            , y = bottomRightY
-            }
+  in
+    { topLeft =
+        { x = topLeftX
+        , y = topLeftY
         }
+    , bottomRight =
+        { x = bottomRightX
+        , y = bottomRightY
+        }
+    }
 
 rectangleSize : Rectangle -> Size
 rectangleSize {topLeft,bottomRight} =

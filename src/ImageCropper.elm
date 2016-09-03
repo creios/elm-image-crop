@@ -229,15 +229,17 @@ movePoint movement point =
 resizeSelection : Size -> Resize -> Mouse.Position -> Rectangle
 resizeSelection imageSize resize current =
   let
-    horizontalMovement = current.x - resize.start.x
-    verticalMovement = current.y - resize.start.y
+    movement =
+      { horizontal = current.x - resize.start.x
+      , vertical = current.y - resize.start.y
+      }
 
     {topLeft,bottomRight} = resize.originalSelection
     {width,height} = rectangleSize resize.originalSelection
 
     topLeftX =
       if List.member resize.direction [NorthWest, West, SouthWest] then
-        (topLeft.x + horizontalMovement)
+        (topLeft.x + movement.horizontal)
           |> atLeast 0
           |> atMost (topLeft.x + width)
       else
@@ -245,7 +247,7 @@ resizeSelection imageSize resize current =
 
     topLeftY =
       if List.member resize.direction [NorthWest, North, NorthEast] then
-        (topLeft.y + verticalMovement)
+        (topLeft.y + movement.vertical)
           |> atLeast 0
           |> atMost (topLeft.y + height)
       else
@@ -253,7 +255,7 @@ resizeSelection imageSize resize current =
 
     bottomRightX =
       if List.member resize.direction [NorthEast, East, SouthEast] then
-        (bottomRight.x + horizontalMovement)
+        (bottomRight.x + movement.horizontal)
           |> atLeast topLeft.x
           |> atMost (imageSize.width)
       else
@@ -261,7 +263,7 @@ resizeSelection imageSize resize current =
 
     bottomRightY =
       if List.member resize.direction [SouthWest, South, SouthEast] then
-        (bottomRight.y + verticalMovement)
+        (bottomRight.y + movement.vertical)
           |> atLeast topLeft.y
           |> atMost (imageSize.height)
       else

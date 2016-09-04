@@ -1,20 +1,14 @@
+module ImageCropper exposing
+  ( Model, Point, Size, Rectangle, Msg
+  , init, update, view, subscriptions
+  )
+
 import Html exposing (..)
 import Html.App
-import Html.Attributes exposing (style, src, width, height, value, type')
-import Html.Events exposing (onInput, onWithOptions)
-import String exposing (toInt)
+import Html.Attributes exposing (style)
+import Html.Events exposing (onWithOptions)
 import Mouse exposing (Position)
 import Json.Decode as Json
-
-
-main : Program Never
-main =
-  Html.App.program
-    { init = init
-    , view = view
-    , update = update
-    , subscriptions = subscriptions
-    }
 
 -- Model
 
@@ -25,14 +19,14 @@ type alias Model =
   , resize : Maybe Resize
   }
 
-type alias Size =
-  { width : Int
-  , height : Int
-  }
-
 type alias Point =
   { x : Int
   , y : Int
+  }
+
+type alias Size =
+  { width : Int
+  , height : Int
   }
 
 type alias Rectangle =
@@ -56,36 +50,18 @@ type alias Resize =
   , originalSelection: Rectangle
   }
 
-init : (Model, Cmd Msg)
-init =
-  ( { imageSize =
-        { width = 400
-        , height = 200
-        }
-    , selection =
-        { topLeft =
-            { x = 20
-            , y = 10
-            }
-        , bottomRight =
-            { x = 140
-            , y = 80
-            }
-        }
-    , move = Nothing
-    , resize = Nothing
-    }
-  , Cmd.none
-  )
+init : Size -> Rectangle -> Model
+init imageSize selection =
+  { imageSize = imageSize
+  , selection = selection
+  , move = Nothing
+  , resize = Nothing
+  }
 
 -- Update
 
 type Msg
-  = TopLeftX String
-  | TopLeftY String
-  | BottomRightX String
-  | BottomRightY String
-  | MoveStart Mouse.Position
+  = MoveStart Mouse.Position
   | MoveAt Mouse.Position
   | MoveEnd Mouse.Position
   | ResizeStart Direction Mouse.Position
@@ -103,46 +79,6 @@ updateHelper msg model =
     {topLeft, bottomRight} = selection
   in
     case msg of
-      TopLeftX value ->
-        let
-          newTopLeft =
-            { topLeft | x = Result.withDefault topLeft.x (toInt value) }
-
-          newSelection =
-            { selection | topLeft = newTopLeft  }
-        in
-          { model | selection = newSelection }
-
-      TopLeftY value ->
-        let
-          newTopLeft =
-            { topLeft | y = Result.withDefault topLeft.y (toInt value) }
-
-          newSelection =
-            { selection | topLeft = newTopLeft }
-        in
-          { model | selection = newSelection }
-
-      BottomRightX value ->
-        let
-          newBottomRight =
-            { bottomRight | x = Result.withDefault bottomRight.x (toInt value) }
-
-          newSelection =
-            { selection | bottomRight = newBottomRight  }
-        in
-          { model | selection = newSelection }
-
-      BottomRightY value ->
-        let
-          newBottomRight =
-            { bottomRight | y = Result.withDefault bottomRight.y (toInt value) }
-
-          newSelection =
-            { selection | bottomRight = newBottomRight  }
-        in
-          { model | selection = newSelection }
-
       MoveStart xy ->
         let
           move =
@@ -312,25 +248,17 @@ subscriptions model =
 
 -- View
 
-view : Model -> Html Msg
-view model =
+view : List (Attribute Msg) -> Model -> Html Msg
+view attributes model =
   div
     []
-    [ placeholdit model.imageSize
+    [ img attributes []
     , div
         [ selectionStyle model
         , onMouseDown MoveStart
         ]
         (borders ++ dragbars ++ handles)
-    , debugForm model.selection
     ]
-
-placeholdit : Size -> Html Msg
-placeholdit size =
-  img [ src ("https://placehold.it/" ++ toString size.width ++ "x" ++ toString size.height)
-      , width size.width
-      , height size.height
-      ] []
 
 selectionStyle : Model -> Attribute Msg
 selectionStyle model =
@@ -495,37 +423,6 @@ handle orientation =
           , ("cursor", cursor ++ "-resize")
           ]
       ] []
-
-debugForm : Rectangle -> Html Msg
-debugForm selection =
-  Html.form
-    []
-    [ text "("
-    , input
-      [ type' "number"
-      , value (toString selection.topLeft.x)
-      , onInput TopLeftX
-      ] []
-    , text "|"
-    , input
-      [ type' "number"
-      , value (toString selection.topLeft.y)
-      , onInput TopLeftY
-      ] []
-    , text "), ("
-    , input
-      [ type' "number"
-      , value (toString selection.bottomRight.x)
-      , onInput BottomRightX
-      ] []
-    , text "|"
-    , input
-      [ type' "number"
-      , value (toString selection.bottomRight.y)
-      , onInput BottomRightY
-      ] []
-    , text ")"
-    ]
 
 type Position
   = PositionTop

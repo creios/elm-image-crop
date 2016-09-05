@@ -63,9 +63,7 @@ update msg model =
           (model, cmd) = ImageCropper.update msg model
         in
            ( model
-           , Platform.Cmd.map
-               (\msg -> ImageCropperMsg msg)
-               cmd
+           , Platform.Cmd.map ImageCropperMsg cmd
            )
 
       TopLeftX value ->
@@ -112,9 +110,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.map
-    (\msg -> ImageCropperMsg msg)
-    (ImageCropper.subscriptions model)
+  Sub.map ImageCropperMsg <| ImageCropper.subscriptions model
 
 -- View
 
@@ -123,7 +119,7 @@ view model =
   div
     []
     [ Html.App.map
-        (\msg -> ImageCropperMsg msg)
+        ImageCropperMsg
         (ImageCropper.view
           (placeholdit model.imageSize)
           model)

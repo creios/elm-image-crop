@@ -27,8 +27,8 @@ type alias Size =
 init : (Model, Cmd Msg)
 init = 
   ( ImageCropper.init
-      { width = 400
-      , height = 200
+      { width = 900
+      , height = 600
       }
       { topLeft =
           { x = 20
@@ -121,13 +121,13 @@ view model =
     [ Html.App.map
         ImageCropperMsg
         (ImageCropper.view
-          (placeholdit model.imageSize)
+          (unsplashit model.imageSize)
           model)
     , debugForm model.selection
     ]
 
-placeholdit size =
-  [ src ("https://placehold.it/" ++ toString size.width ++ "x" ++ toString size.height)
+unsplashit size =
+  [ src ("https://unsplash.it/" ++ toString size.width ++ "/" ++ toString size.height ++ "?image=1067")
   , width size.width
   , height size.height
   ]

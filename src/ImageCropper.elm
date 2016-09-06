@@ -194,7 +194,7 @@ resizeSelection imageSize resize current =
       if List.member resize.direction [NorthEast, East, SouthEast] then
         (bottomRight.x + movement.horizontal)
           |> atLeast topLeft.x
-          |> atMost (imageSize.width)
+          |> atMost imageSize.width
       else
         bottomRight.x
 
@@ -202,7 +202,7 @@ resizeSelection imageSize resize current =
       if List.member resize.direction [SouthWest, South, SouthEast] then
         (bottomRight.y + movement.vertical)
           |> atLeast topLeft.y
-          |> atMost (imageSize.height)
+          |> atMost imageSize.height
       else
         bottomRight.y
 

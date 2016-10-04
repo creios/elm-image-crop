@@ -24,7 +24,7 @@ import Json.Decode as Json
 
 type alias Model =
     { imageSize : Size
-    , selection : Rectangle
+    , selection : Maybe Rectangle
     , move : Maybe Move
     , resize : Maybe Resize
     }
@@ -67,7 +67,7 @@ type alias Resize =
     }
 
 
-init : Size -> Rectangle -> Model
+init : Size -> Maybe Rectangle -> Model
 init imageSize selection =
     { imageSize = imageSize
     , selection = selection
@@ -96,62 +96,65 @@ update msg model =
 
 updateHelper : Msg -> Model -> Model
 updateHelper msg model =
-    let
-        { imageSize, selection } =
-            model
+    case msg of
+        MoveStart xy ->
+            case model.selection of
+                Just selection ->
+                    let
+                        move =
+                            { start = xy
+                            , originalSelection = selection
+                            }
+                    in
+                        { model | move = Just move }
 
-        { topLeft, bottomRight } =
-            selection
-    in
-        case msg of
-            MoveStart xy ->
-                let
-                    move =
-                        { start = xy
-                        , originalSelection = selection
-                        }
-                in
-                    { model | move = Just move }
+                Nothing ->
+                    model
 
-            MoveAt xy ->
-                case model.move of
-                    Just move ->
-                        let
-                            newSelection =
-                                moveSelection imageSize move xy
-                        in
-                            { model | selection = newSelection }
+        MoveAt xy ->
+            case model.move of
+                Just move ->
+                    let
+                        newSelection =
+                            moveSelection model.imageSize move xy
+                    in
+                        { model | selection = Just newSelection }
 
-                    Nothing ->
-                        model
+                Nothing ->
+                    model
 
-            MoveEnd _ ->
-                { model | move = Nothing }
+        MoveEnd _ ->
+            { model | move = Nothing }
 
-            ResizeStart direction xy ->
-                let
-                    resize =
-                        { direction = direction
-                        , start = xy
-                        , originalSelection = selection
-                        }
-                in
-                    { model | resize = Just resize }
+        ResizeStart direction xy ->
+            case model.selection of
+                Just selection ->
+                    let
+                        resize =
+                            { direction = direction
+                            , start = xy
+                            , originalSelection = selection
+                            }
+                    in
+                        { model | resize = Just resize }
 
-            ResizeAt xy ->
-                case model.resize of
-                    Just resize ->
-                        let
-                            newSelection =
-                                resizeSelection imageSize resize xy
-                        in
-                            { model | selection = newSelection }
+                Nothing ->
+                    model
 
-                    Nothing ->
-                        model
+        ResizeAt xy ->
+            case model.resize of
+                Just resize ->
+                    let
+                        newSelection =
+                            resizeSelection model.imageSize resize xy
+                    in
+                        { model | selection = Just newSelection }
 
-            ResizeEnd xy ->
-                { model | resize = Nothing }
+                Nothing ->
+                    model
+
+        ResizeEnd xy ->
+            { model | resize = Nothing }
 
 
 atLeast : comparable -> comparable -> comparable
@@ -304,44 +307,57 @@ view model =
             , ( "height", px model.imageSize.height )
             ]
         ]
-        [ div
-            [ selectionStyle model
-            , onMouseDown MoveStart
-            ]
-            (borders ++ dragbars ++ handles)
-        , shadow
-            [ ( "left", "0" )
-            , ( "top", "0" )
-            , ( "height", "100%" )
-            , ( "width", px (model.selection.topLeft.x - 1 |> atLeast 0) )
-            ]
-        , shadow
-            [ ( "right", "0" )
-            , ( "top", "0" )
-            , ( "height", "100%" )
-            , ( "width", px (model.imageSize.width - model.selection.bottomRight.x - 1 |> atLeast 0) )
-            ]
-        , shadow
-            [ ( "left", px (model.selection.topLeft.x - 1) )
-            , ( "top", "0" )
-            , ( "height", px (model.selection.topLeft.y - 1 |> atLeast 0) )
-            , ( "width", px ((rectangleSize model.selection).width + 2) )
-            ]
-        , shadow
-            [ ( "left", px (model.selection.topLeft.x - 1) )
-            , ( "bottom", "0" )
-            , ( "height", px (model.imageSize.height - model.selection.bottomRight.y - 1 |> atLeast 0) )
-            , ( "width", px ((rectangleSize model.selection).width + 2) )
-            ]
-        ]
+        (selectionView model)
 
 
-selectionStyle : Model -> Attribute Msg
-selectionStyle model =
+selectionView : Model -> List (Html Msg)
+selectionView model =
+    case model.selection of
+        Just selection ->
+            [ div
+                [ selectionStyle selection
+                , onMouseDown MoveStart
+                ]
+                (borders ++ dragbars ++ handles)
+            , shadow
+                [ ( "left", "0" )
+                , ( "top", "0" )
+                , ( "width", px (selection.topLeft.x - 1 |> atLeast 0) )
+                , ( "height", "100%" )
+                ]
+            , shadow
+                [ ( "right", "0" )
+                , ( "top", "0" )
+                , ( "width", px (model.imageSize.width - selection.bottomRight.x - 1 |> atLeast 0) )
+                , ( "height", "100%" )
+                ]
+            , shadow
+                [ ( "left", px (selection.topLeft.x - 1) )
+                , ( "top", "0" )
+                , ( "width", px ((rectangleSize selection).width + 2) )
+                , ( "height", px (selection.topLeft.y - 1 |> atLeast 0) )
+                ]
+            , shadow
+                [ ( "left", px (selection.topLeft.x - 1) )
+                , ( "bottom", "0" )
+                , ( "width", px ((rectangleSize selection).width + 2) )
+                , ( "height", px (model.imageSize.height - selection.bottomRight.y - 1 |> atLeast 0) )
+                ]
+            ]
+
+        Nothing ->
+            [ shadow
+                [ ( "left", "0" )
+                , ( "top", "0" )
+                , ( "width", px model.imageSize.width )
+                , ( "height", px model.imageSize.height )
+                ]
+            ]
+
+
+selectionStyle : Rectangle -> Attribute Msg
+selectionStyle selection =
     let
-        selection =
-            model.selection
-
         { x, y } =
             selection.topLeft
 

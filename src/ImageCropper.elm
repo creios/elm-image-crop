@@ -299,7 +299,7 @@ view model =
     div
         [ style
             [ ( "position", "absolute" )
-            , ( "top", "0")
+            , ( "top", "0" )
             , ( "width", px model.imageSize.width )
             , ( "height", px model.imageSize.height )
             ]
@@ -309,54 +309,30 @@ view model =
             , onMouseDown MoveStart
             ]
             (borders ++ dragbars ++ handles)
-        , div
-            [ style
-                [ ( "background-color", "#000000" )
-                , ( "opacity", "0.5" )
-                , ( "position", "absolute" )
-                , ( "left", "0" )
-                , ( "top", "0" )
-                , ( "height", "100%" )
-                , ( "width", px (model.selection.topLeft.x - 1 |> atLeast 0) )
-                ]
+        , shadow
+            [ ( "left", "0" )
+            , ( "top", "0" )
+            , ( "height", "100%" )
+            , ( "width", px (model.selection.topLeft.x - 1 |> atLeast 0) )
             ]
-            []
-        , div
-            [ style
-                [ ( "background-color", "#000000" )
-                , ( "opacity", "0.5" )
-                , ( "position", "absolute" )
-                , ( "right", "0" )
-                , ( "top", "0" )
-                , ( "height", "100%" )
-                , ( "width", px (model.imageSize.width - model.selection.bottomRight.x - 1 |> atLeast 0) )
-                ]
+        , shadow
+            [ ( "right", "0" )
+            , ( "top", "0" )
+            , ( "height", "100%" )
+            , ( "width", px (model.imageSize.width - model.selection.bottomRight.x - 1 |> atLeast 0) )
             ]
-            []
-        , div
-            [ style
-                [ ( "background-color", "#000000" )
-                , ( "opacity", "0.5" )
-                , ( "position", "absolute" )
-                , ( "left", px (model.selection.topLeft.x - 1) )
-                , ( "top", "0" )
-                , ( "height", px (model.selection.topLeft.y - 1 |> atLeast 0) )
-                , ( "width", px ((rectangleSize model.selection).width + 2) )
-                ]
+        , shadow
+            [ ( "left", px (model.selection.topLeft.x - 1) )
+            , ( "top", "0" )
+            , ( "height", px (model.selection.topLeft.y - 1 |> atLeast 0) )
+            , ( "width", px ((rectangleSize model.selection).width + 2) )
             ]
-            []
-        , div
-            [ style
-                [ ( "background-color", "#000000" )
-                , ( "opacity", "0.5" )
-                , ( "position", "absolute" )
-                , ( "left", px (model.selection.topLeft.x - 1) )
-                , ( "bottom", "0" )
-                , ( "height", px (model.imageSize.height - model.selection.bottomRight.y - 1 |> atLeast 0) )
-                , ( "width", px ((rectangleSize model.selection).width + 2) )
-                ]
+        , shadow
+            [ ( "left", px (model.selection.topLeft.x - 1) )
+            , ( "bottom", "0" )
+            , ( "height", px (model.imageSize.height - model.selection.bottomRight.y - 1 |> atLeast 0) )
+            , ( "width", px ((rectangleSize model.selection).width + 2) )
             ]
-            []
         ]
 
 
@@ -554,6 +530,20 @@ handle orientation =
                 , ( "cursor", cursor ++ "-resize" )
                 ]
             ]
+            []
+
+
+shadow : List ( String, String ) -> Html Msg
+shadow positioning =
+    let
+        styles =
+            [ ( "background-color", "#000000" )
+            , ( "opacity", "0.5" )
+            , ( "position", "absolute" )
+            ]
+    in
+        div
+            [ style (styles ++ positioning) ]
             []
 
 

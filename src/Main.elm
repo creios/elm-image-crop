@@ -140,22 +140,25 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div
-        []
-        [ Html.App.map
+        [ style
+            [ ("position", "relative")
+            ]
+        ]
+        [ unsplashit model.imageSize
+        , Html.App.map
             ImageCropperMsg
-            (ImageCropper.view
-                (unsplashit model.imageSize)
-                model
-            )
+            (ImageCropper.view model)
         , debugForm model.selection
         ]
 
 
 unsplashit size =
-    [ src ("https://unsplash.it/" ++ toString size.width ++ "/" ++ toString size.height ++ "?image=1067")
-    , width size.width
-    , height size.height
-    ]
+    img
+        [ src ("https://unsplash.it/" ++ toString size.width ++ "/" ++ toString size.height ++ "?image=1067")
+        , width size.width
+        , height size.height
+        ]
+        []
 
 
 debugForm : ImageCropper.Rectangle -> Html Msg

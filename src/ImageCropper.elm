@@ -294,72 +294,69 @@ subscriptions model =
 -- View
 
 
-view : List (Attribute Msg) -> Model -> Html Msg
-view attributes model =
+view : Model -> Html Msg
+view model =
     div
-        []
+        [ style
+            [ ( "position", "absolute" )
+            , ( "top", "0")
+            , ( "width", px model.imageSize.width )
+            , ( "height", px model.imageSize.height )
+            ]
+        ]
         [ div
+            [ selectionStyle model
+            , onMouseDown MoveStart
+            ]
+            (borders ++ dragbars ++ handles)
+        , div
             [ style
-                [ ( "position", "relative" )
-                , ( "width", px model.imageSize.width )
-                , ( "height", px model.imageSize.height )
+                [ ( "background-color", "#000000" )
+                , ( "opacity", "0.5" )
+                , ( "position", "absolute" )
+                , ( "left", "0" )
+                , ( "top", "0" )
+                , ( "height", "100%" )
+                , ( "width", px (model.selection.topLeft.x - 1 |> atLeast 0) )
                 ]
             ]
-            [ img attributes []
-            , div
-                [ selectionStyle model
-                , onMouseDown MoveStart
+            []
+        , div
+            [ style
+                [ ( "background-color", "#000000" )
+                , ( "opacity", "0.5" )
+                , ( "position", "absolute" )
+                , ( "right", "0" )
+                , ( "top", "0" )
+                , ( "height", "100%" )
+                , ( "width", px (model.imageSize.width - model.selection.bottomRight.x - 1 |> atLeast 0) )
                 ]
-                (borders ++ dragbars ++ handles)
-            , div
-                [ style
-                    [ ( "background-color", "#000000" )
-                    , ( "opacity", "0.5" )
-                    , ( "position", "absolute" )
-                    , ( "left", "0" )
-                    , ( "top", "0" )
-                    , ( "height", "100%" )
-                    , ( "width", px (model.selection.topLeft.x - 1 |> atLeast 0) )
-                    ]
-                ]
-                []
-            , div
-                [ style
-                    [ ( "background-color", "#000000" )
-                    , ( "opacity", "0.5" )
-                    , ( "position", "absolute" )
-                    , ( "right", "0" )
-                    , ( "top", "0" )
-                    , ( "height", "100%" )
-                    , ( "width", px (model.imageSize.width - model.selection.bottomRight.x - 1 |> atLeast 0) )
-                    ]
-                ]
-                []
-            , div
-                [ style
-                    [ ( "background-color", "#000000" )
-                    , ( "opacity", "0.5" )
-                    , ( "position", "absolute" )
-                    , ( "left", px (model.selection.topLeft.x - 1) )
-                    , ( "top", "0" )
-                    , ( "height", px (model.selection.topLeft.y - 1 |> atLeast 0) )
-                    , ( "width", px ((rectangleSize model.selection).width + 2) )
-                    ]
-                ]
-                []
-            , div
-                [ style
-                    [ ( "background-color", "#000000" )
-                    , ( "opacity", "0.5" )
-                    , ( "position", "absolute" )
-                    , ( "left", px (model.selection.topLeft.x - 1) )
-                    , ( "bottom", "0" )
-                    , ( "height", px (model.imageSize.height - model.selection.bottomRight.y - 1 |> atLeast 0) )
-                    , ( "width", px ((rectangleSize model.selection).width + 2) )
-                    ]
-                ]
-                []
             ]
+            []
+        , div
+            [ style
+                [ ( "background-color", "#000000" )
+                , ( "opacity", "0.5" )
+                , ( "position", "absolute" )
+                , ( "left", px (model.selection.topLeft.x - 1) )
+                , ( "top", "0" )
+                , ( "height", px (model.selection.topLeft.y - 1 |> atLeast 0) )
+                , ( "width", px ((rectangleSize model.selection).width + 2) )
+                ]
+            ]
+            []
+        , div
+            [ style
+                [ ( "background-color", "#000000" )
+                , ( "opacity", "0.5" )
+                , ( "position", "absolute" )
+                , ( "left", px (model.selection.topLeft.x - 1) )
+                , ( "bottom", "0" )
+                , ( "height", px (model.imageSize.height - model.selection.bottomRight.y - 1 |> atLeast 0) )
+                , ( "width", px ((rectangleSize model.selection).width + 2) )
+                ]
+            ]
+            []
         ]
 
 

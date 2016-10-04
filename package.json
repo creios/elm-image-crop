@@ -1,0 +1,21 @@
+{
+  "name": "elm-image-crop",
+  "version": "0.1.0",
+  "description": "Responsive image crop written in elm",
+  "scripts": {
+    "prepublish": "elm-make src/Interop.elm --output=dist/interop.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/creios/elm-image-crop.git"
+  },
+  "author": "Jonas Schürmann",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/creios/elm-image-crop/issues"
+  },
+  "homepage": "https://github.com/creios/elm-image-crop#readme",
+  "devDependencies": {
+    "elm": "^0.17.1"
+  }
+}

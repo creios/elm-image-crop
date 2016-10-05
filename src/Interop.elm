@@ -2,26 +2,26 @@ port module Interop exposing (main, viewportChanged)
 
 import Html exposing (Html)
 import Html.App
-import ImageCropper
+import ImageCrop
 
 
 type alias Flags =
-    { image : ImageCropper.Size
+    { image : ImageCrop.Size
     , cropAreaWidth : Int
-    , selection : Maybe ImageCropper.Rectangle
+    , selection : Maybe ImageCrop.Rectangle
     }
 
 
-init : Flags -> ( ImageCropper.Model, Cmd Msg )
+init : Flags -> ( ImageCrop.Model, Cmd Msg )
 init { image, cropAreaWidth, selection } =
-    ( ImageCropper.init image cropAreaWidth selection
+    ( ImageCrop.init image cropAreaWidth selection
     , Cmd.none
     )
 
 
 type Msg
     = ViewportChanged Int
-    | ImageCropperMsg ImageCropper.Msg
+    | ImageCropMsg ImageCrop.Msg
 
 
 main : Program Flags
@@ -34,7 +34,7 @@ main =
         }
 
 
-update : Msg -> ImageCropper.Model -> ( ImageCropper.Model, Cmd Msg )
+update : Msg -> ImageCrop.Model -> ( ImageCrop.Model, Cmd Msg )
 update msg model =
     let
         newModel =
@@ -42,27 +42,27 @@ update msg model =
                 ViewportChanged width ->
                     { model | cropAreaWidth = width }
 
-                ImageCropperMsg msg ->
-                    fst (ImageCropper.update msg model)
+                ImageCropMsg msg ->
+                    fst (ImageCrop.update msg model)
     in
         ( newModel, selectionChanged newModel.selection )
 
 
-view : ImageCropper.Model -> Html Msg
+view : ImageCrop.Model -> Html Msg
 view model =
-    Html.App.map ImageCropperMsg (ImageCropper.view model)
+    Html.App.map ImageCropMsg (ImageCrop.view model)
 
 
-subscriptions : ImageCropper.Model -> Sub Msg
+subscriptions : ImageCrop.Model -> Sub Msg
 subscriptions model =
     let
-        imageCropperSubs =
-            Sub.map ImageCropperMsg <| ImageCropper.subscriptions model
+        imageCroppSubs =
+            Sub.map ImageCropMsg <| ImageCrop.subscriptions model
     in
-        Sub.batch [ viewportChanged ViewportChanged, imageCropperSubs ]
+        Sub.batch [ viewportChanged ViewportChanged, imageCroppSubs ]
 
 
-port selectionChanged : Maybe ImageCropper.Rectangle -> Cmd msg
+port selectionChanged : Maybe ImageCrop.Rectangle -> Cmd msg
 
 
 port viewportChanged : (Int -> msg) -> Sub msg

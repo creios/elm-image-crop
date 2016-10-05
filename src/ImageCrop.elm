@@ -1,4 +1,4 @@
-module ImageCropper
+module ImageCrop
     exposing
         ( Model
         , Point

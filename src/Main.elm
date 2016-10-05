@@ -4,7 +4,7 @@ import Html exposing (..)
 import Html.App exposing (program)
 import Html.Attributes exposing (style, src, width, height, value, type')
 import Html.Events exposing (onInput)
-import ImageCropper
+import ImageCrop
 import Platform.Cmd
 import String exposing (toInt)
 
@@ -24,7 +24,7 @@ main =
 
 
 type alias Model =
-    ImageCropper.Model
+    ImageCrop.Model
 
 
 type alias Size =
@@ -35,7 +35,7 @@ type alias Size =
 
 init : ( Model, Cmd Msg )
 init =
-    ( ImageCropper.init
+    ( ImageCrop.init
         { width = 1800
         , height = 1200
         }
@@ -60,7 +60,7 @@ init =
 
 
 type Msg
-    = ImageCropperMsg ImageCropper.Msg
+    = ImageCropMsg ImageCrop.Msg
     | TopLeftX String
     | TopLeftY String
     | BottomRightX String
@@ -70,13 +70,13 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ImageCropperMsg msg ->
+        ImageCropMsg msg ->
             let
                 ( model, cmd ) =
-                    ImageCropper.update msg model
+                    ImageCrop.update msg model
             in
                 ( model
-                , Platform.Cmd.map ImageCropperMsg cmd
+                , Platform.Cmd.map ImageCropMsg cmd
                 )
 
         TopLeftX value ->
@@ -136,7 +136,7 @@ update msg model =
                 updateSelectionValue model value default transform
 
 
-updateSelectionValue : Model -> String -> (ImageCropper.Rectangle -> Int) -> (Int -> ImageCropper.Rectangle -> ImageCropper.Rectangle) -> ( Model, Cmd Msg )
+updateSelectionValue : Model -> String -> (ImageCrop.Rectangle -> Int) -> (Int -> ImageCrop.Rectangle -> ImageCrop.Rectangle) -> ( Model, Cmd Msg )
 updateSelectionValue model value default transform =
     let
         newModel =
@@ -163,7 +163,7 @@ updateSelectionValue model value default transform =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.map ImageCropperMsg <| ImageCropper.subscriptions model
+    Sub.map ImageCropMsg <| ImageCrop.subscriptions model
 
 
 
@@ -179,13 +179,13 @@ view model =
         ]
         [ unsplashit model.image model.cropAreaWidth
         , Html.App.map
-            ImageCropperMsg
-            (ImageCropper.view model)
+            ImageCropMsg
+            (ImageCrop.view model)
         , debugForm model.selection
         ]
 
 
-unsplashit : ImageCropper.Size -> Int -> Html Msg
+unsplashit : ImageCrop.Size -> Int -> Html Msg
 unsplashit size displayWidth =
     img
         [ src ("https://unsplash.it/" ++ toString size.width ++ "/" ++ toString size.height ++ "?image=1067")
@@ -199,7 +199,7 @@ unsplashit size displayWidth =
         []
 
 
-debugForm : Maybe ImageCropper.Rectangle -> Html Msg
+debugForm : Maybe ImageCrop.Rectangle -> Html Msg
 debugForm selection =
     case selection of
         Just selection ->

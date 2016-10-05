@@ -27,6 +27,7 @@ type alias Model =
     , selection : Maybe Rectangle
     , move : Maybe Move
     , resize : Maybe Resize
+    , select : Maybe Select
     }
 
 
@@ -67,12 +68,18 @@ type alias Resize =
     }
 
 
+type alias Select =
+    { start : Mouse.Position
+    }
+
+
 init : Size -> Maybe Rectangle -> Model
 init imageSize selection =
     { imageSize = imageSize
     , selection = selection
     , move = Nothing
     , resize = Nothing
+    , select = Nothing
     }
 
 
@@ -87,6 +94,9 @@ type Msg
     | ResizeStart Direction Mouse.Position
     | ResizeAt Mouse.Position
     | ResizeEnd Mouse.Position
+    | SelectStart Mouse.Position
+    | SelectAt Mouse.Position
+    | SelectEnd Mouse.Position
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -115,10 +125,10 @@ updateHelper msg model =
             case model.move of
                 Just move ->
                     let
-                        newSelection =
+                        selection =
                             moveSelection model.imageSize move xy
                     in
-                        { model | selection = Just newSelection }
+                        { model | selection = Just selection }
 
                 Nothing ->
                     model
@@ -145,16 +155,34 @@ updateHelper msg model =
             case model.resize of
                 Just resize ->
                     let
-                        newSelection =
+                        selection =
                             resizeSelection model.imageSize resize xy
                     in
-                        { model | selection = Just newSelection }
+                        { model | selection = Just selection }
 
                 Nothing ->
                     model
 
-        ResizeEnd xy ->
+        ResizeEnd _ ->
             { model | resize = Nothing }
+
+        SelectStart xy ->
+            { model | selection = Nothing, select = Just { start = xy } }
+
+        SelectAt xy ->
+            case model.select of
+                Just select ->
+                    let
+                        selection =
+                            createSelection model.imageSize select xy
+                    in
+                        { model | selection = selection }
+
+                Nothing ->
+                    model
+
+        SelectEnd _ ->
+            { model | select = Nothing }
 
 
 atLeast : comparable -> comparable -> comparable
@@ -267,6 +295,25 @@ rectangleSize { topLeft, bottomRight } =
     }
 
 
+createSelection : Size -> Select -> Mouse.Position -> Maybe Rectangle
+createSelection imageSize select xy =
+    if select.start == xy then
+        Nothing
+    else
+        let
+            selection =
+                { topLeft =
+                    { x = min select.start.x xy.x |> atLeast 0
+                    , y = min select.start.y xy.y |> atLeast 0
+                    }
+                , bottomRight =
+                    { x = max select.start.x xy.x |> atMost imageSize.width
+                    , y = max select.start.y xy.y |> atMost imageSize.height
+                    }
+                }
+        in
+           Just selection
+
 
 -- Subscriptions
 
@@ -276,21 +323,29 @@ subscriptions model =
     let
         moveSubscriptions =
             case model.move of
-                Nothing ->
-                    []
-
                 Just _ ->
                     [ Mouse.moves MoveAt, Mouse.ups MoveEnd ]
 
-        resizeSubscriptions =
-            case model.resize of
                 Nothing ->
                     []
 
+        resizeSubscriptions =
+            case model.resize of
                 Just _ ->
                     [ Mouse.moves ResizeAt, Mouse.ups ResizeEnd ]
+
+                Nothing ->
+                    []
+
+        selectSubscriptions =
+            case model.select of
+                Just _ ->
+                    [ Mouse.moves SelectAt, Mouse.ups SelectEnd ]
+
+                Nothing ->
+                    []
     in
-        Sub.batch (moveSubscriptions ++ resizeSubscriptions)
+        Sub.batch (moveSubscriptions ++ resizeSubscriptions ++ selectSubscriptions)
 
 
 
@@ -559,7 +614,9 @@ shadow positioning =
             ]
     in
         div
-            [ style (styles ++ positioning) ]
+            [ style (styles ++ positioning)
+            , onMouseDown SelectStart
+            ]
             []
 
 

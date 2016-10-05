@@ -68,64 +68,88 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case model.selection of
-        Just selection ->
+    case msg of
+        ImageCropperMsg msg ->
             let
-                { topLeft, bottomRight } =
-                    selection
+                ( model, cmd ) =
+                    ImageCropper.update msg model
             in
-                case msg of
-                    ImageCropperMsg msg ->
-                        let
-                            ( model, cmd ) =
-                                ImageCropper.update msg model
-                        in
-                            ( model
-                            , Platform.Cmd.map ImageCropperMsg cmd
-                            )
+                ( model
+                , Platform.Cmd.map ImageCropperMsg cmd
+                )
 
-                    TopLeftX value ->
-                        let
-                            newTopLeft =
-                                { topLeft | x = Result.withDefault topLeft.x (toInt value) }
+        TopLeftX value ->
+            let
+                default selection =
+                    selection.topLeft.x
 
-                            newSelection =
-                                { selection | topLeft = newTopLeft }
-                        in
-                            ( { model | selection = Just newSelection }, Cmd.none )
+                transform number selection =
+                    let
+                        { topLeft } = selection
+                    in
+                        { selection | topLeft = { topLeft | x = number } }
+            in
+                updateSelectionValue model value default transform
 
-                    TopLeftY value ->
-                        let
-                            newTopLeft =
-                                { topLeft | y = Result.withDefault topLeft.y (toInt value) }
+        TopLeftY value ->
+            let
+                default selection =
+                    selection.topLeft.y
 
-                            newSelection =
-                                { selection | topLeft = newTopLeft }
-                        in
-                            ( { model | selection = Just newSelection }, Cmd.none )
+                transform number selection =
+                    let
+                        { topLeft } = selection
+                    in
+                        { selection | topLeft = { topLeft | y = number } }
+            in
+                updateSelectionValue model value default transform
 
-                    BottomRightX value ->
-                        let
-                            newBottomRight =
-                                { bottomRight | x = Result.withDefault bottomRight.x (toInt value) }
+        BottomRightX value ->
+            let
+                default selection =
+                    selection.bottomRight.x
 
-                            newSelection =
-                                { selection | bottomRight = newBottomRight }
-                        in
-                            ( { model | selection = Just newSelection }, Cmd.none )
+                transform number selection =
+                    let
+                        { bottomRight } = selection
+                    in
+                        { selection | bottomRight = { bottomRight | x = number } }
+            in
+                updateSelectionValue model value default transform
 
-                    BottomRightY value ->
-                        let
-                            newBottomRight =
-                                { bottomRight | y = Result.withDefault bottomRight.y (toInt value) }
+        BottomRightY value ->
+            let
+                default selection =
+                    selection.bottomRight.y
 
-                            newSelection =
-                                { selection | bottomRight = newBottomRight }
-                        in
-                            ( { model | selection = Just newSelection }, Cmd.none )
+                transform number selection =
+                    let
+                        { bottomRight } = selection
+                    in
+                        { selection | bottomRight = { bottomRight | y = number } }
+            in
+                updateSelectionValue model value default transform
 
-        Nothing ->
-            ( model, Cmd.none )
+
+updateSelectionValue : Model -> String -> (ImageCropper.Rectangle -> Int) -> (Int -> ImageCropper.Rectangle -> ImageCropper.Rectangle) -> ( Model, Cmd Msg )
+updateSelectionValue model value default transform =
+    let
+        newModel =
+            case model.selection of
+                Just selection ->
+                    let
+                        number =
+                            Result.withDefault (default selection) (toInt value)
+
+                        newSelection =
+                            transform number selection
+                    in
+                        { model | selection = Just newSelection }
+
+                Nothing ->
+                    model
+    in
+       ( newModel, Cmd.none )
 
 
 

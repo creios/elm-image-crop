@@ -2,33 +2,44 @@
 <html>
     <head>
         <meta charset="utf-8"/> 
-        <script src="interop.js"></script>
+        <script src="dist/interop.js"></script>
         <title>Javscript Interop Demo</title>
     </head>
     <body>
         <div style="position: relative">
-            <img src="https://unsplash.it/900/600?image=1067" width="900" height="600">
+            <img src="https://unsplash.it/900/600?image=1067" width="900" height="600" style="max-width: 100%; height: auto;" id="image">
             <div id="main"></div>
         </div>
-        (<span id="top-left-x">0</span>|<span id="top-left-y">0</span>),
-        (<span id="bottom-right-x">100</span>|<span id="bottom-right-y">100</span>)
+        <div id="coordinates">
+            (<span id="top-left-x">0</span>|<span id="top-left-y">0</span>),
+            (<span id="bottom-right-x">100</span>|<span id="bottom-right-y">100</span>)
+        </div>
         <script>
+var image = document.getElementById('image');
+var width = +getComputedStyle(image).width.replace('px', '');
 var node = document.getElementById('main');
 var app = Elm.Interop.embed(node, {
-    imageSize: {width: 900, height: 600},
+    image: {width: 900, height: 600},
+    cropAreaWidth: width,
     selection: {topLeft: {x: 0, y: 0}, bottomRight: {x: 100, y: 100}}
 });
 var
+    coordinatesDiv = document.getElementById('coordinates'),
     topLeftX = document.getElementById('top-left-x'),
     topLeftY = document.getElementById('top-left-y'),
     bottomRightX = document.getElementById('bottom-right-x'),
     bottomRightY = document.getElementById('bottom-right-y');
 app.ports.selectionChanged.subscribe(function (selection) {
     // console.log(selection);
-    topLeftX.innerHTML = selection.topLeft.x;
-    topLeftY.innerHTML = selection.topLeft.y;
-    bottomRightX.innerHTML = selection.bottomRight.x;
-    bottomRightY.innerHTML = selection.bottomRight.y;
+    if (selection !== null) {
+        topLeftX.innerHTML = selection.topLeft.x;
+        topLeftY.innerHTML = selection.topLeft.y;
+        bottomRightX.innerHTML = selection.bottomRight.x;
+        bottomRightY.innerHTML = selection.bottomRight.y;
+        coordinatesDiv.style.display = 'block';
+    } else {
+        coordinatesDiv.style.display = 'none';
+    }
 });
         </script>
     </body>

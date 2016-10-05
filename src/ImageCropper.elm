@@ -24,6 +24,7 @@ import Json.Decode as Json
 
 type alias Model =
     { image : Size
+    , cropAreaWidth : Int
     , selection : Maybe Rectangle
     , move : Maybe Move
     , resize : Maybe Resize
@@ -73,9 +74,10 @@ type alias Select =
     }
 
 
-init : Size -> Maybe Rectangle -> Model
-init image selection =
+init : Size -> Int -> Maybe Rectangle -> Model
+init image cropAreaWidth selection =
     { image = image
+    , cropAreaWidth = cropAreaWidth
     , selection = selection
     , move = Nothing
     , resize = Nothing
@@ -126,7 +128,7 @@ updateHelper msg model =
                 Just move ->
                     let
                         selection =
-                            moveSelection model.image move xy
+                            moveSelection model.image model.cropAreaWidth move xy
                     in
                         { model | selection = Just selection }
 
@@ -156,7 +158,7 @@ updateHelper msg model =
                 Just resize ->
                     let
                         selection =
-                            resizeSelection model.image resize xy
+                            resizeSelection model.image model.cropAreaWidth resize xy
                     in
                         { model | selection = Just selection }
 
@@ -174,7 +176,7 @@ updateHelper msg model =
                 Just select ->
                     let
                         selection =
-                            createSelection model.image select xy
+                            createSelection model.image model.cropAreaWidth select xy
                     in
                         { model | selection = selection }
 
@@ -195,21 +197,29 @@ atMost =
     min
 
 
-moveSelection : Size -> Move -> Mouse.Position -> Rectangle
-moveSelection image move current =
+moveSelection : Size -> Int -> Move -> Mouse.Position -> Rectangle
+moveSelection image cropAreaWidth move current =
     let
         selection =
             move.originalSelection
+
+        factor =
+            toFloat image.width / toFloat cropAreaWidth
+
+        scale value =
+            round (toFloat value * factor)
 
         movement =
             { horizontal =
                 current.x
                     - move.start.x
+                    |> scale
                     |> atLeast (-selection.topLeft.x)
                     |> atMost (image.width - selection.bottomRight.x)
             , vertical =
                 current.y
                     - move.start.y
+                    |> scale
                     |> atLeast (-selection.topLeft.y)
                     |> atMost (image.height - selection.bottomRight.y)
             }
@@ -231,12 +241,18 @@ movePoint movement point =
     }
 
 
-resizeSelection : Size -> Resize -> Mouse.Position -> Rectangle
-resizeSelection image resize current =
+resizeSelection : Size -> Int -> Resize -> Mouse.Position -> Rectangle
+resizeSelection image cropAreaWidth resize current =
     let
+        factor =
+            toFloat image.width / toFloat cropAreaWidth
+
+        scale value =
+            round (toFloat value * factor)
+
         movement =
-            { horizontal = current.x - resize.start.x
-            , vertical = current.y - resize.start.y
+            { horizontal = current.x - resize.start.x |> scale
+            , vertical = current.y - resize.start.y |> scale
             }
 
         { topLeft, bottomRight } =
@@ -295,24 +311,44 @@ rectangleSize { topLeft, bottomRight } =
     }
 
 
-createSelection : Size -> Select -> Mouse.Position -> Maybe Rectangle
-createSelection image select xy =
+createSelection : Size -> Int -> Select -> Mouse.Position -> Maybe Rectangle
+createSelection image cropAreaWidth select xy =
     if select.start == xy then
         Nothing
     else
         let
+            factor =
+                toFloat image.width / toFloat cropAreaWidth
+
+            scale value =
+                round (toFloat value * factor)
+
             selection =
                 { topLeft =
-                    { x = min select.start.x xy.x |> atLeast 0
-                    , y = min select.start.y xy.y |> atLeast 0
+                    { x = min select.start.x xy.x |> scale |> atLeast 0
+                    , y = min select.start.y xy.y |> scale |> atLeast 0
                     }
                 , bottomRight =
-                    { x = max select.start.x xy.x |> atMost image.width
-                    , y = max select.start.y xy.y |> atMost image.height
+                    { x = max select.start.x xy.x |> scale |> atMost image.width
+                    , y = max select.start.y xy.y |> scale |> atMost image.height
                     }
                 }
         in
             Just selection
+
+
+scaleRectangle : Float -> Rectangle -> Rectangle
+scaleRectangle factor rectangle =
+    { topLeft = scalePoint factor rectangle.topLeft
+    , bottomRight = scalePoint factor rectangle.bottomRight
+    }
+
+
+scalePoint : Float -> Point -> Point
+scalePoint factor point =
+    { x = round (toFloat point.x * factor)
+    , y = round (toFloat point.y * factor)
+    }
 
 
 
@@ -355,70 +391,88 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div
-        [ style
-            [ ( "position", "absolute" )
-            , ( "top", "0" )
-            , ( "width", px model.image.width )
-            , ( "height", px model.image.height )
+    let
+        cropArea =
+            calculateCropArea model.image model.cropAreaWidth
+    in
+        div
+            [ style
+                [ ( "position", "absolute" )
+                , ( "top", "0" )
+                , ( "width", px cropArea.width )
+                , ( "height", px cropArea.height )
+                ]
             ]
-        ]
-        (selectionView model)
+            (selectionView model cropArea)
 
 
-selectionView : Model -> List (Html Msg)
-selectionView model =
+calculateCropArea : Size -> Int -> Size
+calculateCropArea image cropAreaWidth =
+    { width = cropAreaWidth
+    , height = round (toFloat image.height / toFloat image.width * toFloat cropAreaWidth)
+    }
+
+
+selectionView : Model -> Size -> List (Html Msg)
+selectionView model cropArea =
     case model.selection of
         Just selection ->
-            [ div
-                [ selectionStyle selection
-                , onMouseDown MoveStart
+            let
+                factor =
+                    toFloat model.cropAreaWidth / toFloat model.image.width
+
+                displaySelection =
+                    scaleRectangle factor selection
+            in
+                [ div
+                    [ selectionStyle displaySelection
+                    , onMouseDown MoveStart
+                    ]
+                    (borders ++ dragbars ++ handles)
+                , shadow
+                    [ ( "left", "0" )
+                    , ( "top", "0" )
+                    , ( "width", px (displaySelection.topLeft.x - 1 |> atLeast 0) )
+                    , ( "height", "100%" )
+                    ]
+                , shadow
+                    [ ( "right", "0" )
+                    , ( "top", "0" )
+                    , ( "width", px (cropArea.width - displaySelection.bottomRight.x - 1 |> atLeast 0) )
+                    , ( "height", "100%" )
+                    ]
+                , shadow
+                    [ ( "left", px (displaySelection.topLeft.x - 1) )
+                    , ( "top", "0" )
+                    , ( "width", px ((rectangleSize displaySelection).width + 2) )
+                    , ( "height", px (displaySelection.topLeft.y - 1 |> atLeast 0) )
+                    ]
+                , shadow
+                    [ ( "left", px (displaySelection.topLeft.x - 1) )
+                    , ( "bottom", "0" )
+                    , ( "width", px ((rectangleSize displaySelection).width + 2) )
+                    , ( "height", px (cropArea.height - displaySelection.bottomRight.y - 1 |> atLeast 0) )
+                    ]
                 ]
-                (borders ++ dragbars ++ handles)
-            , shadow
-                [ ( "left", "0" )
-                , ( "top", "0" )
-                , ( "width", px (selection.topLeft.x - 1 |> atLeast 0) )
-                , ( "height", "100%" )
-                ]
-            , shadow
-                [ ( "right", "0" )
-                , ( "top", "0" )
-                , ( "width", px (model.image.width - selection.bottomRight.x - 1 |> atLeast 0) )
-                , ( "height", "100%" )
-                ]
-            , shadow
-                [ ( "left", px (selection.topLeft.x - 1) )
-                , ( "top", "0" )
-                , ( "width", px ((rectangleSize selection).width + 2) )
-                , ( "height", px (selection.topLeft.y - 1 |> atLeast 0) )
-                ]
-            , shadow
-                [ ( "left", px (selection.topLeft.x - 1) )
-                , ( "bottom", "0" )
-                , ( "width", px ((rectangleSize selection).width + 2) )
-                , ( "height", px (model.image.height - selection.bottomRight.y - 1 |> atLeast 0) )
-                ]
-            ]
 
         Nothing ->
             [ shadow
                 [ ( "left", "0" )
                 , ( "top", "0" )
-                , ( "width", px model.image.width )
-                , ( "height", px model.image.height )
+                , ( "width", px cropArea.width )
+                , ( "height", px cropArea.height )
                 ]
             ]
 
 
 selectionStyle : Rectangle -> Attribute Msg
-selectionStyle selection =
+selectionStyle displaySelection =
     let
         { x, y } =
-            selection.topLeft
+            displaySelection.topLeft
 
         { width, height } =
-            rectangleSize selection
+            rectangleSize displaySelection
     in
         style
             [ ( "position", "absolute" )

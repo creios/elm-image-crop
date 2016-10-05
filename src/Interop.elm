@@ -6,13 +6,14 @@ import ImageCropper
 
 type alias Flags =
     { image : ImageCropper.Size
-    , selection : ImageCropper.Rectangle
+    , cropAreaWidth : Int
+    , selection : Maybe ImageCropper.Rectangle
     }
 
 
 init : Flags -> ( ImageCropper.Model, Cmd ImageCropper.Msg )
-init { image, selection } =
-    ( ImageCropper.init image selection
+init { image, cropAreaWidth, selection } =
+    ( ImageCropper.init image cropAreaWidth selection
     , Cmd.none
     )
 
@@ -36,4 +37,4 @@ update msg model =
         ( newModel, selectionChanged newModel.selection )
 
 
-port selectionChanged : ImageCropper.Rectangle -> Cmd msg
+port selectionChanged : Maybe ImageCropper.Rectangle -> Cmd msg

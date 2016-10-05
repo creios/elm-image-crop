@@ -36,17 +36,18 @@ type alias Size =
 init : ( Model, Cmd Msg )
 init =
     ( ImageCropper.init
-        { width = 900
-        , height = 600
+        { width = 1800
+        , height = 1200
         }
+        900
         (Just
             { topLeft =
-                { x = 20
-                , y = 10
+                { x = 40
+                , y = 20
                 }
             , bottomRight =
-                { x = 140
-                , y = 80
+                { x = 280
+                , y = 160
                 }
             }
         )
@@ -176,7 +177,7 @@ view model =
             [ ( "position", "relative" )
             ]
         ]
-        [ unsplashit model.image
+        [ unsplashit model.image model.cropAreaWidth
         , Html.App.map
             ImageCropperMsg
             (ImageCropper.view model)
@@ -184,11 +185,16 @@ view model =
         ]
 
 
-unsplashit size =
+unsplashit : ImageCropper.Size -> Int -> Html Msg
+unsplashit size displayWidth =
     img
         [ src ("https://unsplash.it/" ++ toString size.width ++ "/" ++ toString size.height ++ "?image=1067")
         , width size.width
         , height size.height
+        , style
+            [ ( "width", toString displayWidth ++ "px" )
+            , ( "height", "auto" )
+            ]
         ]
         []
 

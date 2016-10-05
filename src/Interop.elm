@@ -5,13 +5,13 @@ import ImageCropper
 
 
 type alias Flags =
-    { imageSize: ImageCropper.Size
-    , selection: ImageCropper.Rectangle
+    { imageSize : ImageCropper.Size
+    , selection : ImageCropper.Rectangle
     }
 
 
 init : Flags -> ( ImageCropper.Model, Cmd ImageCropper.Msg )
-init {imageSize,selection} =
+init { imageSize, selection } =
     ( ImageCropper.init imageSize selection
     , Cmd.none
     )
@@ -30,9 +30,10 @@ main =
 update : ImageCropper.Msg -> ImageCropper.Model -> ( ImageCropper.Model, Cmd ImageCropper.Msg )
 update msg model =
     let
-        (newModel, _) = ImageCropper.update msg model
+        ( newModel, _ ) =
+            ImageCropper.update msg model
     in
-        (newModel, selectionChanged newModel.selection)
+        ( newModel, selectionChanged newModel.selection )
 
 
 port selectionChanged : ImageCropper.Rectangle -> Cmd msg

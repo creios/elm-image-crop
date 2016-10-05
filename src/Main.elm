@@ -85,7 +85,8 @@ update msg model =
 
                 transform number selection =
                     let
-                        { topLeft } = selection
+                        { topLeft } =
+                            selection
                     in
                         { selection | topLeft = { topLeft | x = number } }
             in
@@ -98,7 +99,8 @@ update msg model =
 
                 transform number selection =
                     let
-                        { topLeft } = selection
+                        { topLeft } =
+                            selection
                     in
                         { selection | topLeft = { topLeft | y = number } }
             in
@@ -111,7 +113,8 @@ update msg model =
 
                 transform number selection =
                     let
-                        { bottomRight } = selection
+                        { bottomRight } =
+                            selection
                     in
                         { selection | bottomRight = { bottomRight | x = number } }
             in
@@ -124,7 +127,8 @@ update msg model =
 
                 transform number selection =
                     let
-                        { bottomRight } = selection
+                        { bottomRight } =
+                            selection
                     in
                         { selection | bottomRight = { bottomRight | y = number } }
             in
@@ -149,7 +153,7 @@ updateSelectionValue model value default transform =
                 Nothing ->
                     model
     in
-       ( newModel, Cmd.none )
+        ( newModel, Cmd.none )
 
 
 

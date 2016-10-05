@@ -5,14 +5,14 @@ import ImageCropper
 
 
 type alias Flags =
-    { imageSize : ImageCropper.Size
+    { image : ImageCropper.Size
     , selection : ImageCropper.Rectangle
     }
 
 
 init : Flags -> ( ImageCropper.Model, Cmd ImageCropper.Msg )
-init { imageSize, selection } =
-    ( ImageCropper.init imageSize selection
+init { image, selection } =
+    ( ImageCropper.init image selection
     , Cmd.none
     )
 

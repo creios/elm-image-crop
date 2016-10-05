@@ -176,7 +176,7 @@ view model =
             [ ( "position", "relative" )
             ]
         ]
-        [ unsplashit model.imageSize
+        [ unsplashit model.image
         , Html.App.map
             ImageCropperMsg
             (ImageCropper.view model)

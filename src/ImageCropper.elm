@@ -23,7 +23,7 @@ import Json.Decode as Json
 
 
 type alias Model =
-    { imageSize : Size
+    { image : Size
     , selection : Maybe Rectangle
     , move : Maybe Move
     , resize : Maybe Resize
@@ -74,8 +74,8 @@ type alias Select =
 
 
 init : Size -> Maybe Rectangle -> Model
-init imageSize selection =
-    { imageSize = imageSize
+init image selection =
+    { image = image
     , selection = selection
     , move = Nothing
     , resize = Nothing
@@ -126,7 +126,7 @@ updateHelper msg model =
                 Just move ->
                     let
                         selection =
-                            moveSelection model.imageSize move xy
+                            moveSelection model.image move xy
                     in
                         { model | selection = Just selection }
 
@@ -156,7 +156,7 @@ updateHelper msg model =
                 Just resize ->
                     let
                         selection =
-                            resizeSelection model.imageSize resize xy
+                            resizeSelection model.image resize xy
                     in
                         { model | selection = Just selection }
 
@@ -174,7 +174,7 @@ updateHelper msg model =
                 Just select ->
                     let
                         selection =
-                            createSelection model.imageSize select xy
+                            createSelection model.image select xy
                     in
                         { model | selection = selection }
 
@@ -196,7 +196,7 @@ atMost =
 
 
 moveSelection : Size -> Move -> Mouse.Position -> Rectangle
-moveSelection imageSize move current =
+moveSelection image move current =
     let
         selection =
             move.originalSelection
@@ -206,12 +206,12 @@ moveSelection imageSize move current =
                 current.x
                     - move.start.x
                     |> atLeast (-selection.topLeft.x)
-                    |> atMost (imageSize.width - selection.bottomRight.x)
+                    |> atMost (image.width - selection.bottomRight.x)
             , vertical =
                 current.y
                     - move.start.y
                     |> atLeast (-selection.topLeft.y)
-                    |> atMost (imageSize.height - selection.bottomRight.y)
+                    |> atMost (image.height - selection.bottomRight.y)
             }
     in
         moveRectangle movement move.originalSelection
@@ -232,7 +232,7 @@ movePoint movement point =
 
 
 resizeSelection : Size -> Resize -> Mouse.Position -> Rectangle
-resizeSelection imageSize resize current =
+resizeSelection image resize current =
     let
         movement =
             { horizontal = current.x - resize.start.x
@@ -265,7 +265,7 @@ resizeSelection imageSize resize current =
             if List.member resize.direction [ NorthEast, East, SouthEast ] then
                 (bottomRight.x + movement.horizontal)
                     |> atLeast topLeft.x
-                    |> atMost imageSize.width
+                    |> atMost image.width
             else
                 bottomRight.x
 
@@ -273,7 +273,7 @@ resizeSelection imageSize resize current =
             if List.member resize.direction [ SouthWest, South, SouthEast ] then
                 (bottomRight.y + movement.vertical)
                     |> atLeast topLeft.y
-                    |> atMost imageSize.height
+                    |> atMost image.height
             else
                 bottomRight.y
     in
@@ -296,7 +296,7 @@ rectangleSize { topLeft, bottomRight } =
 
 
 createSelection : Size -> Select -> Mouse.Position -> Maybe Rectangle
-createSelection imageSize select xy =
+createSelection image select xy =
     if select.start == xy then
         Nothing
     else
@@ -307,8 +307,8 @@ createSelection imageSize select xy =
                     , y = min select.start.y xy.y |> atLeast 0
                     }
                 , bottomRight =
-                    { x = max select.start.x xy.x |> atMost imageSize.width
-                    , y = max select.start.y xy.y |> atMost imageSize.height
+                    { x = max select.start.x xy.x |> atMost image.width
+                    , y = max select.start.y xy.y |> atMost image.height
                     }
                 }
         in
@@ -359,8 +359,8 @@ view model =
         [ style
             [ ( "position", "absolute" )
             , ( "top", "0" )
-            , ( "width", px model.imageSize.width )
-            , ( "height", px model.imageSize.height )
+            , ( "width", px model.image.width )
+            , ( "height", px model.image.height )
             ]
         ]
         (selectionView model)
@@ -384,7 +384,7 @@ selectionView model =
             , shadow
                 [ ( "right", "0" )
                 , ( "top", "0" )
-                , ( "width", px (model.imageSize.width - selection.bottomRight.x - 1 |> atLeast 0) )
+                , ( "width", px (model.image.width - selection.bottomRight.x - 1 |> atLeast 0) )
                 , ( "height", "100%" )
                 ]
             , shadow
@@ -397,7 +397,7 @@ selectionView model =
                 [ ( "left", px (selection.topLeft.x - 1) )
                 , ( "bottom", "0" )
                 , ( "width", px ((rectangleSize selection).width + 2) )
-                , ( "height", px (model.imageSize.height - selection.bottomRight.y - 1 |> atLeast 0) )
+                , ( "height", px (model.image.height - selection.bottomRight.y - 1 |> atLeast 0) )
                 ]
             ]
 
@@ -405,8 +405,8 @@ selectionView model =
             [ shadow
                 [ ( "left", "0" )
                 , ( "top", "0" )
-                , ( "width", px model.imageSize.width )
-                , ( "height", px model.imageSize.height )
+                , ( "width", px model.image.width )
+                , ( "height", px model.image.height )
                 ]
             ]
 

@@ -25,6 +25,7 @@ import Json.Decode as Json
 type alias Model =
     { image : Size
     , cropAreaWidth : Int
+    , offset : Point
     , selection : Maybe Rectangle
     , move : Maybe Move
     , resize : Maybe Resize
@@ -74,10 +75,11 @@ type alias Select =
     }
 
 
-init : Size -> Int -> Maybe Rectangle -> Model
-init image cropAreaWidth selection =
+init : Size -> Int -> Point -> Maybe Rectangle -> Model
+init image cropAreaWidth offset selection =
     { image = image
     , cropAreaWidth = cropAreaWidth
+    , offset = offset
     , selection = selection
     , move = Nothing
     , resize = Nothing
@@ -176,7 +178,7 @@ updateHelper msg model =
                 Just select ->
                     let
                         selection =
-                            createSelection model.image model.cropAreaWidth select xy
+                            createSelection select model xy
                     in
                         { model | selection = selection }
 
@@ -311,26 +313,37 @@ rectangleSize { topLeft, bottomRight } =
     }
 
 
-createSelection : Size -> Int -> Select -> Mouse.Position -> Maybe Rectangle
-createSelection image cropAreaWidth select xy =
+createSelection : Select -> Model -> Mouse.Position -> Maybe Rectangle
+createSelection select model xy =
     if select.start == xy then
         Nothing
     else
         let
             factor =
-                toFloat image.width / toFloat cropAreaWidth
+                toFloat model.image.width / toFloat model.cropAreaWidth
 
             scale value =
                 round (toFloat value * factor)
 
+            normalizePoint point =
+                { x = point.x - model.offset.x
+                , y = point.y - model.offset.y
+                }
+
+            normalizedStart =
+                normalizePoint select.start
+
+            normalizedXy =
+                normalizePoint xy
+
             selection =
                 { topLeft =
-                    { x = min select.start.x xy.x |> scale |> atLeast 0
-                    , y = min select.start.y xy.y |> scale |> atLeast 0
+                    { x = min normalizedStart.x normalizedXy.x |> scale |> atLeast 0
+                    , y = min normalizedStart.y normalizedXy.y |> scale |> atLeast 0
                     }
                 , bottomRight =
-                    { x = max select.start.x xy.x |> scale |> atMost image.width
-                    , y = max select.start.y xy.y |> scale |> atMost image.height
+                    { x = max normalizedStart.x normalizedXy.x |> scale |> atMost model.image.width
+                    , y = max normalizedStart.y normalizedXy.y |> scale |> atMost model.image.height
                     }
                 }
         in

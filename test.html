@@ -5,7 +5,7 @@
         <script src="dist/interop.js"></script>
         <title>Javscript Interop Demo</title>
     </head>
-    <body>
+    <body style="margin: 8px;">
         <div style="position: relative">
             <img src="https://unsplash.it/900/600?image=1067" width="900" height="600" style="max-width: 100%; height: auto;" id="image">
             <div id="main"></div>
@@ -21,6 +21,7 @@ var node = document.getElementById('main');
 var app = Elm.Interop.embed(node, {
     image: {width: 900, height: 600},
     cropAreaWidth: getImageWidth(),
+    offset: {x: 8, y: 8},
     selection: {topLeft: {x: 0, y: 0}, bottomRight: {x: 100, y: 100}}
 });
 var

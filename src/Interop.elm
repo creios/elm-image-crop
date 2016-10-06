@@ -8,13 +8,14 @@ import ImageCrop
 type alias Flags =
     { image : ImageCrop.Size
     , cropAreaWidth : Int
+    , offset : ImageCrop.Point
     , selection : Maybe ImageCrop.Rectangle
     }
 
 
 init : Flags -> ( ImageCrop.Model, Cmd Msg )
-init { image, cropAreaWidth, selection } =
-    ( ImageCrop.init image cropAreaWidth selection
+init { image, cropAreaWidth, offset, selection } =
+    ( ImageCrop.init image cropAreaWidth offset selection
     , Cmd.none
     )
 

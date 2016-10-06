@@ -40,6 +40,9 @@ init =
         , height = 1200
         }
         900
+        { x = 20
+        , y = 20
+        }
         (Just
             { topLeft =
                 { x = 40
@@ -175,6 +178,7 @@ view model =
     div
         [ style
             [ ( "position", "relative" )
+            , ( "margin", "20px" )
             ]
         ]
         [ unsplashit model.image model.cropAreaWidth

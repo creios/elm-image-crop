@@ -16,7 +16,7 @@ import Html.App
 import Html.Attributes exposing (style)
 import Html.Events exposing (onWithOptions)
 import Mouse exposing (Position)
-import Json.Decode as Json
+import Json.Decode as Json exposing ((:=))
 
 
 -- Model
@@ -92,13 +92,13 @@ init image cropAreaWidth offset selection =
 
 
 type Msg
-    = MoveStart Mouse.Position
+    = MoveStart MouseButtonEvent
     | MoveAt Mouse.Position
     | MoveEnd Mouse.Position
-    | ResizeStart Direction Mouse.Position
+    | ResizeStart Direction MouseButtonEvent
     | ResizeAt Mouse.Position
     | ResizeEnd Mouse.Position
-    | SelectStart Mouse.Position
+    | SelectStart MouseButtonEvent
     | SelectAt Mouse.Position
     | SelectEnd Mouse.Position
 
@@ -111,19 +111,22 @@ update msg model =
 updateHelper : Msg -> Model -> Model
 updateHelper msg model =
     case msg of
-        MoveStart xy ->
-            case model.selection of
-                Just selection ->
-                    let
-                        move =
-                            { start = xy
-                            , originalSelection = selection
-                            }
-                    in
-                        { model | move = Just move }
+        MoveStart event ->
+            if event.button == 0 then
+                case model.selection of
+                    Just selection ->
+                        let
+                            move =
+                                { start = event.position
+                                , originalSelection = selection
+                                }
+                        in
+                            { model | move = Just move }
 
-                Nothing ->
-                    model
+                    Nothing ->
+                        model
+            else
+                model
 
         MoveAt xy ->
             case model.move of
@@ -140,20 +143,23 @@ updateHelper msg model =
         MoveEnd _ ->
             { model | move = Nothing }
 
-        ResizeStart direction xy ->
-            case model.selection of
-                Just selection ->
-                    let
-                        resize =
-                            { direction = direction
-                            , start = xy
-                            , originalSelection = selection
-                            }
-                    in
-                        { model | resize = Just resize }
+        ResizeStart direction event ->
+            if event.button == 0 then
+                case model.selection of
+                    Just selection ->
+                        let
+                            resize =
+                                { direction = direction
+                                , start = event.position
+                                , originalSelection = selection
+                                }
+                        in
+                            { model | resize = Just resize }
 
-                Nothing ->
-                    model
+                    Nothing ->
+                        model
+            else
+                model
 
         ResizeAt xy ->
             case model.resize of
@@ -170,8 +176,15 @@ updateHelper msg model =
         ResizeEnd _ ->
             { model | resize = Nothing }
 
-        SelectStart xy ->
-            { model | selection = Nothing, select = Just { start = xy } }
+        SelectStart event ->
+            if event.button == 0 then
+                let
+                    select =
+                        Just { start = event.position }
+                in
+                    { model | selection = Nothing, select = select }
+            else
+                model
 
         SelectAt xy ->
             case model.select of
@@ -732,11 +745,25 @@ positionCssHelper position =
             ( "left", Vertical )
 
 
-onMouseDown : (Mouse.Position -> Msg) -> Attribute Msg
+onMouseDown : (MouseButtonEvent -> Msg) -> Attribute Msg
 onMouseDown msg =
     onWithOptions
         "mousedown"
         { stopPropagation = True
         , preventDefault = True
         }
-        (Json.map msg Mouse.position)
+        (Json.map msg mouseEventDecoder)
+
+
+type alias MouseButtonEvent =
+    { position : Mouse.Position
+    , button : Int
+    }
+
+
+mouseEventDecoder =
+    Json.object3
+        (\x y button -> MouseButtonEvent (Mouse.Position x y) button)
+        ("pageX" := Json.int)
+        ("pageY" := Json.int)
+        ("button" := Json.int)

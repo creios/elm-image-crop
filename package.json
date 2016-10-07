@@ -1,6 +1,6 @@
 {
   "name": "elm-image-crop",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Responsive image crop written in elm",
   "scripts": {
     "prepublish": "elm-make src/Interop.elm --output=dist/interop.js"

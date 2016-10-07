@@ -166,7 +166,7 @@ updateHelper msg model =
                 Just resize ->
                     let
                         selection =
-                            resizeSelection model.image model.cropAreaWidth resize xy
+                            resizeSelection model resize xy
                     in
                         { model | selection = Just selection }
 
@@ -269,67 +269,66 @@ normalizeEdges canvas first second =
     }
 
 
-resizeSelection : Size -> Int -> Resize -> Mouse.Position -> Rectangle
-resizeSelection image cropAreaWidth resize current =
+resizeSelection : Model -> Resize -> Mouse.Position -> Rectangle
+resizeSelection model resize position =
     let
+        { topLeft, bottomRight } =
+            resize.originalSelection
+
+        relativeCoordinates point =
+            { x = point.x - model.offset.x
+            , y = point.y - model.offset.y
+            }
+
         factor =
-            toFloat image.width / toFloat cropAreaWidth
+            toFloat model.image.width / toFloat model.cropAreaWidth
 
         scale value =
             round (toFloat value * factor)
 
-        movement =
-            { horizontal = current.x - resize.start.x |> scale
-            , vertical = current.y - resize.start.y |> scale
+        scalePoint point =
+            { x = scale point.x
+            , y = scale point.y
             }
 
-        { topLeft, bottomRight } =
-            resize.originalSelection
+        normalizedPosition =
+            scalePoint (relativeCoordinates position)
 
-        { width, height } =
-            rectangleSize resize.originalSelection
-
-        topLeftX =
-            if List.member resize.direction [ NorthWest, West, SouthWest ] then
-                (topLeft.x + movement.horizontal)
-                    |> atLeast 0
-                    |> atMost (topLeft.x + width)
-            else
+        firstX =
+            if List.member resize.direction [ NorthEast, East, SouthEast, South ] then
                 topLeft.x
-
-        topLeftY =
-            if List.member resize.direction [ NorthWest, North, NorthEast ] then
-                (topLeft.y + movement.vertical)
-                    |> atLeast 0
-                    |> atMost (topLeft.y + height)
-            else
-                topLeft.y
-
-        bottomRightX =
-            if List.member resize.direction [ NorthEast, East, SouthEast ] then
-                (bottomRight.x + movement.horizontal)
-                    |> atLeast topLeft.x
-                    |> atMost image.width
             else
                 bottomRight.x
 
-        bottomRightY =
-            if List.member resize.direction [ SouthWest, South, SouthEast ] then
-                (bottomRight.y + movement.vertical)
-                    |> atLeast topLeft.y
-                    |> atMost image.height
+        firstY =
+            if List.member resize.direction [ East, SouthEast, South, SouthWest ] then
+                topLeft.y
             else
                 bottomRight.y
+
+        secondX =
+            if resize.direction == South then
+                bottomRight.x
+            else if resize.direction == North then
+                topLeft.x
+            else
+                normalizedPosition.x
+
+        secondY =
+            if resize.direction == East then
+                bottomRight.y
+            else if resize.direction == West then
+                topLeft.y
+            else
+                normalizedPosition.y
+
+        first =
+            Point firstX firstY
+
+        second =
+            Point secondX secondY
     in
-        { topLeft =
-            { x = topLeftX
-            , y = topLeftY
-            }
-        , bottomRight =
-            { x = bottomRightX
-            , y = bottomRightY
-            }
-        }
+        normalizeEdges model.image first second
 
 
 rectangleSize : Rectangle -> Size
@@ -368,10 +367,7 @@ createSelection select model position =
                 scalePoint (relativeCoordinates position)
 
             selection =
-                normalizeEdges
-                    model.image
-                    normalizedStart
-                    normalizedPosition
+                normalizeEdges model.image normalizedStart normalizedPosition
         in
             Just selection
 

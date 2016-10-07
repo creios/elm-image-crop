@@ -256,6 +256,19 @@ movePoint movement point =
     }
 
 
+normalizeEdges : Size -> Point -> Point -> Rectangle
+normalizeEdges canvas first second =
+    { topLeft =
+        { x = min first.x second.x |> atLeast 0
+        , y = min first.y second.y |> atLeast 0
+        }
+    , bottomRight =
+        { x = max first.x second.x |> atMost canvas.width
+        , y = max first.y second.y |> atMost canvas.height
+        }
+    }
+
+
 resizeSelection : Size -> Int -> Resize -> Mouse.Position -> Rectangle
 resizeSelection image cropAreaWidth resize current =
     let
@@ -332,45 +345,33 @@ createSelection select model position =
         Nothing
     else
         let
+            relativeCoordinates point =
+                { x = point.x - model.offset.x
+                , y = point.y - model.offset.y
+                }
+
             factor =
                 toFloat model.image.width / toFloat model.cropAreaWidth
 
             scale value =
                 round (toFloat value * factor)
 
-            normalizePoint point =
-                { x = point.x - model.offset.x
-                , y = point.y - model.offset.y
+            scalePoint point =
+                { x = scale point.x
+                , y = scale point.y
                 }
 
             normalizedStart =
-                normalizePoint select.start
+                scalePoint (relativeCoordinates select.start)
 
             normalizedPosition =
-                normalizePoint position
+                scalePoint (relativeCoordinates position)
 
             selection =
-                { topLeft =
-                    { x =
-                        min normalizedStart.x normalizedPosition.x
-                            |> scale
-                            |> atLeast 0
-                    , y =
-                        min normalizedStart.y normalizedPosition.y
-                            |> scale
-                            |> atLeast 0
-                    }
-                , bottomRight =
-                    { x =
-                        max normalizedStart.x normalizedPosition.x
-                            |> scale
-                            |> atMost model.image.width
-                    , y =
-                        max normalizedStart.y normalizedPosition.y
-                            |> scale
-                            |> atMost model.image.height
-                    }
-                }
+                normalizeEdges
+                    model.image
+                    normalizedStart
+                    normalizedPosition
         in
             Just selection
 

@@ -327,8 +327,8 @@ rectangleSize { topLeft, bottomRight } =
 
 
 createSelection : Select -> Model -> Mouse.Position -> Maybe Rectangle
-createSelection select model xy =
-    if select.start == xy then
+createSelection select model position =
+    if select.start == position then
         Nothing
     else
         let
@@ -346,17 +346,29 @@ createSelection select model xy =
             normalizedStart =
                 normalizePoint select.start
 
-            normalizedXy =
-                normalizePoint xy
+            normalizedPosition =
+                normalizePoint position
 
             selection =
                 { topLeft =
-                    { x = min normalizedStart.x normalizedXy.x |> scale |> atLeast 0
-                    , y = min normalizedStart.y normalizedXy.y |> scale |> atLeast 0
+                    { x =
+                        min normalizedStart.x normalizedPosition.x
+                            |> scale
+                            |> atLeast 0
+                    , y =
+                        min normalizedStart.y normalizedPosition.y
+                            |> scale
+                            |> atLeast 0
                     }
                 , bottomRight =
-                    { x = max normalizedStart.x normalizedXy.x |> scale |> atMost model.image.width
-                    , y = max normalizedStart.y normalizedXy.y |> scale |> atMost model.image.height
+                    { x =
+                        max normalizedStart.x normalizedPosition.x
+                            |> scale
+                            |> atMost model.image.width
+                    , y =
+                        max normalizedStart.y normalizedPosition.y
+                            |> scale
+                            |> atMost model.image.height
                     }
                 }
         in

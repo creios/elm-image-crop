@@ -54,6 +54,7 @@ init =
                 }
             }
         )
+        Nothing
     , Cmd.none
     )
 

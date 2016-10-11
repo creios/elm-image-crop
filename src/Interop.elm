@@ -10,18 +10,20 @@ type alias Flags =
     , cropAreaWidth : Int
     , offset : ImageCrop.Point
     , selection : Maybe ImageCrop.Rectangle
+    , aspectRatio : Maybe ImageCrop.Size
     }
 
 
 init : Flags -> ( ImageCrop.Model, Cmd Msg )
-init { image, cropAreaWidth, offset, selection } =
-    ( ImageCrop.init image cropAreaWidth offset selection
+init { image, cropAreaWidth, offset, selection, aspectRatio } =
+    ( ImageCrop.init image cropAreaWidth offset selection aspectRatio
     , Cmd.none
     )
 
 
 type Msg
     = ViewportChanged Int
+    | ChangeAspectRatio (Maybe ImageCrop.Size)
     | ImageCropMsg ImageCrop.Msg
 
 
@@ -43,6 +45,9 @@ update msg model =
                 ViewportChanged width ->
                     { model | cropAreaWidth = width }
 
+                ChangeAspectRatio aspectRatio ->
+                    ImageCrop.changeAspectRatio aspectRatio model
+
                 ImageCropMsg msg ->
                     fst (ImageCrop.update msg model)
     in
@@ -57,13 +62,20 @@ view model =
 subscriptions : ImageCrop.Model -> Sub Msg
 subscriptions model =
     let
-        imageCroppSubs =
+        imageCropSubs =
             Sub.map ImageCropMsg <| ImageCrop.subscriptions model
     in
-        Sub.batch [ viewportChanged ViewportChanged, imageCroppSubs ]
+        Sub.batch
+            [ viewportChanged ViewportChanged
+            , changeAspectRatio ChangeAspectRatio
+            , imageCropSubs
+            ]
 
 
 port selectionChanged : Maybe ImageCrop.Rectangle -> Cmd msg
 
 
 port viewportChanged : (Int -> msg) -> Sub msg
+
+
+port changeAspectRatio : ((Maybe ImageCrop.Size) -> msg) -> Sub msg

@@ -9,6 +9,7 @@ module ImageCrop
         , update
         , view
         , subscriptions
+        , changeAspectRatio
         )
 
 import Html exposing (..)
@@ -27,6 +28,7 @@ type alias Model =
     , cropAreaWidth : Int
     , offset : Point
     , selection : Maybe Rectangle
+    , aspectRatio : Maybe Size
     , move : Maybe Move
     , resize : Maybe Resize
     , select : Maybe Select
@@ -75,12 +77,13 @@ type alias Select =
     }
 
 
-init : Size -> Int -> Point -> Maybe Rectangle -> Model
-init image cropAreaWidth offset selection =
+init : Size -> Int -> Point -> Maybe Rectangle -> Maybe Size -> Model
+init image cropAreaWidth offset selection aspectRatio =
     { image = image
     , cropAreaWidth = cropAreaWidth
     , offset = offset
     , selection = selection
+    , aspectRatio = aspectRatio
     , move = Nothing
     , resize = Nothing
     , select = Nothing
@@ -386,6 +389,57 @@ scalePoint factor point =
     }
 
 
+changeAspectRatio : Maybe Size -> Model -> Model
+changeAspectRatio maybeAspectRatio model =
+    let
+        selectionUpdated =
+            case maybeAspectRatio of
+                Just aspectRatio ->
+                    case model.selection of
+                        Just selection ->
+                            let
+                                newSelection =
+                                    recalculateSelection aspectRatio selection
+                            in
+                               { model | selection = Just newSelection }
+
+                        Nothing ->
+                            model
+
+                Nothing ->
+                    model
+    in
+       { selectionUpdated | aspectRatio = maybeAspectRatio }
+
+recalculateSelection : Size -> Rectangle -> Rectangle
+recalculateSelection aspectRatio selection =
+    let
+        area =
+            rectangleArea selection
+
+        height =
+            round (sqrt (toFloat area / (toFloat aspectRatio.width / toFloat aspectRatio.height)))
+
+        width =
+            round (sqrt (toFloat area * (toFloat aspectRatio.width / toFloat aspectRatio.height)))
+
+        { topLeft } = selection
+
+        newBottomRight =
+            { x = topLeft.x + width
+            , y = topLeft.y + height
+            }
+    in
+        { selection | bottomRight = newBottomRight }
+
+
+
+rectangleArea : Rectangle -> Int
+rectangleArea rectangle =
+    let
+        size = rectangleSize rectangle
+    in
+        size.width * size.height
 
 -- Subscriptions
 

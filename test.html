@@ -15,6 +15,17 @@
             (<span id="top-left-x">0</span>|<span id="top-left-y">0</span>),
             (<span id="bottom-right-x">100</span>|<span id="bottom-right-y">100</span>)
         </div>
+        <form id="aspect-ratio-form">
+            Aspect Ratio
+            <label>
+                Width
+                <input type="number" step="1" min="1" id="aspect-ratio-width-input"/>
+            </label>
+            <label>
+                Height
+                <input type="number" step="1" min="1" id="aspect-ratio-height-input"/>
+            </label>
+            <button>Set</button>
         <script>
 var image = document.getElementById('image');
 var node = document.getElementById('main');
@@ -22,7 +33,8 @@ var app = Elm.Interop.embed(node, {
     image: {width: 900, height: 600},
     cropAreaWidth: getImageWidth(),
     offset: {x: 8, y: 8},
-    selection: {topLeft: {x: 0, y: 0}, bottomRight: {x: 100, y: 100}}
+    selection: {topLeft: {x: 0, y: 0}, bottomRight: {x: 100, y: 100}},
+    aspectRatio: null
 });
 var
     coordinatesDiv = document.getElementById('coordinates'),
@@ -56,6 +68,16 @@ window.addEventListener('resize', function () {
 function getImageWidth() {
     return +getComputedStyle(image).width.replace('px', '');
 }
+document
+    .getElementById('aspect-ratio-form')
+    .addEventListener('submit', function (event) {
+        event.preventDefault();
+        var aspectRatio = {
+            width: +document.getElementById('aspect-ratio-width-input').value,
+            height: +document.getElementById('aspect-ratio-height-input').value,
+        };
+        app.ports.changeAspectRatio.send(aspectRatio);
+    });
         </script>
     </body>
 </html>

@@ -625,14 +625,14 @@ handle orientation =
             , style
                 [ ( "background-color", "rgba(49,28,28,0.58)" )
                 , ( "border", "1px #eee solid" )
-                , ( "width", "9px" )
-                , ( "height", "9px" )
+                , ( "width", "19px" )
+                , ( "height", "19px" )
                 , ( "position", "absolute" )
                 , ( "opacity", "0.8" )
                 , ( horizontalPosition, horizontalSpacing )
-                , ( "margin-" ++ horizontalPosition, "-6px" )
+                , ( "margin-" ++ horizontalPosition, "-11px" )
                 , ( verticalPosition, verticalSpacing )
-                , ( "margin-" ++ verticalPosition, "-6px" )
+                , ( "margin-" ++ verticalPosition, "-11px" )
                 , ( "cursor", cursor ++ "-resize" )
                 ]
             ]

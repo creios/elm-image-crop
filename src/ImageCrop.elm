@@ -304,7 +304,7 @@ resizeSelection model resize position =
                         calculateAnchor resize
 
                     mouseRectangle =
-                        createRectangleFromMouse
+                        createResizeRectangleFromMouse
                             model.image
                             resize
                             aspectRatio
@@ -391,8 +391,8 @@ calculateAnchor { direction, originalSelection } =
         Point anchorX anchorY
 
 
-createRectangleFromMouse : Size -> Resize -> Size -> Point -> Point -> Rectangle
-createRectangleFromMouse image { direction, originalSelection } aspectRatio anchor position =
+createResizeRectangleFromMouse : Size -> Resize -> Size -> Point -> Point -> Rectangle
+createResizeRectangleFromMouse image { direction } aspectRatio anchor position =
     if List.member direction [ West, East ] then
         let
             x =
@@ -442,41 +442,45 @@ createRectangleFromMouse image { direction, originalSelection } aspectRatio anch
         in
             orderEdges first second
     else
-        let
-            horizontallyAlignedRectangle =
-                let
-                    width = abs (position.x - anchor.x)
+        createSelectionFromMouse image aspectRatio anchor position
 
-                    factor = if position.y < anchor.y then -1 else 1
 
-                    height = factor * round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
+createSelectionFromMouse image aspectRatio anchor position =
+    let
+        horizontallyAlignedRectangle =
+            let
+                width = abs (position.x - anchor.x)
 
-                    target =
-                        { x = position.x
-                        , y = anchor.y + height
-                        }
-                in
-                    orderEdges anchor target
+                factor = if position.y < anchor.y then -1 else 1
 
-            verticallyAlignedRectangle =
-                let
-                    height = abs (position.y - anchor.y)
+                height = factor * round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
 
-                    factor = if position.x < anchor.x then -1 else 1
+                target =
+                    { x = position.x
+                    , y = anchor.y + height
+                    }
+            in
+                orderEdges anchor target
 
-                    width = factor * round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+        verticallyAlignedRectangle =
+            let
+                height = abs (position.y - anchor.y)
 
-                    target =
-                        { x = anchor.x + width
-                        , y = position.y
-                        }
-                in
-                    orderEdges anchor target
-        in
-            maxBy -- You can use minBy here instead to alter the behaviour
-                rectangleArea
-                horizontallyAlignedRectangle
-                verticallyAlignedRectangle
+                factor = if position.x < anchor.x then -1 else 1
+
+                width = factor * round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+
+                target =
+                    { x = anchor.x + width
+                    , y = position.y
+                    }
+            in
+                orderEdges anchor target
+    in
+        maxBy -- You can use minBy here instead to alter the behaviour
+            rectangleArea
+            horizontallyAlignedRectangle
+            verticallyAlignedRectangle
 
 
 
@@ -642,7 +646,12 @@ createSelection select model position =
                 scalePoint (relativeCoordinates position)
 
             selection =
-                normalizeEdges model.image normalizedStart normalizedPosition
+                case model.aspectRatio of
+                    Just aspectRatio ->
+                        createSelectionFromMouse model.image aspectRatio normalizedStart normalizedPosition
+
+                    Nothing ->
+                        normalizeEdges model.image normalizedStart normalizedPosition
         in
             Just selection
 

@@ -451,7 +451,43 @@ createRectangleFromMouse image { direction, originalSelection } aspectRatio anch
         in
             orderEdges first second
     else
-        originalSelection
+        let
+            horizontallyAlignedRectangle =
+                let
+                    width = abs (position.x - anchor.x)
+
+                    factor = if position.y < anchor.y then -1 else 1
+
+                    height = factor * round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
+
+                    target =
+                        { x = position.x
+                        , y = anchor.y + height
+                        }
+                in
+                    orderEdges anchor target
+
+            verticallyAlignedRectangle =
+                let
+                    height = abs (position.y - anchor.y)
+
+                    factor = if position.x < anchor.x then -1 else 1
+
+                    width = factor * round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+
+                    target =
+                        { x = anchor.x + width
+                        , y = position.y
+                        }
+                in
+                    orderEdges anchor target
+        in
+            maxBy -- You can use minBy here instead to alter the behaviour
+                (rectangleSize >> .width)
+                horizontallyAlignedRectangle
+                verticallyAlignedRectangle
+
+
 
 createMaxRectangles { direction } image aspectRatio anchor position =
     if List.member direction [ West, East ] then
@@ -554,9 +590,16 @@ createMaxRectangleRight imageWidth aspectRatio anchor position =
 minBy : (a -> comparable) -> a -> a -> a
 minBy fn a b =
     if fn b < fn a then
-       b
-   else
-       a
+        b
+    else
+        a
+
+maxBy : (a -> comparable) -> a -> a -> a
+maxBy fn a b =
+    if fn b > fn a then
+        b
+    else
+        a
 
 orderEdges first second =
     { topLeft =

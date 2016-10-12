@@ -45,18 +45,18 @@ init =
         }
         (Just
             { topLeft =
-                { x = 822
-                , y = 1
+                { x = 400
+                , y = 200
                 }
             , bottomRight =
-                { x = 906
-                , y = 421
+                { x = 610
+                , y = 497
                 }
             }
         )
         (Just
-            { width = 1
-            , height = 5
+            { width = 210
+            , height = 297
             }
         )
     , Cmd.none

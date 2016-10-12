@@ -319,18 +319,9 @@ resizeSelection model resize position =
                             anchor
                             normalizedPosition
 
-                    dimension =
-                        if List.member resize.direction [ West, East ] then
-                            .height
-                        else if List.member resize.direction [ North, South ] then
-                            .width
-                        else
-                            .width
-
-
                     smallestRectangle =
-                       minBy
-                           (rectangleSize >> dimension)
+                        minBy
+                            rectangleArea
                 in
                    List.foldr
                        smallestRectangle
@@ -483,7 +474,7 @@ createRectangleFromMouse image { direction, originalSelection } aspectRatio anch
                     orderEdges anchor target
         in
             maxBy -- You can use minBy here instead to alter the behaviour
-                (rectangleSize >> .width)
+                rectangleArea
                 horizontallyAlignedRectangle
                 verticallyAlignedRectangle
 

@@ -300,11 +300,8 @@ resizeSelection model resize position =
         case model.aspectRatio of
             Just aspectRatio ->
                 let
-                    anchor : Point
                     anchor =
-                        { x = topLeft.x
-                        , y = round (toFloat (topLeft.y + bottomRight.y) / 2)
-                        }
+                        calculateAnchor resize
 
                     mouseRectangle =
                         createRectangleFromMouse
@@ -328,7 +325,7 @@ resizeSelection model resize position =
                             normalizedPosition
 
                     smallestRectangle =
-                       mapmin
+                       minBy
                            (rectangleSize >> .width)
                 in
                    List.foldr
@@ -375,6 +372,31 @@ resizeSelection model resize position =
                         Point secondX secondY
                 in
                     normalizeEdges model.image first second
+
+calculateAnchor : Resize -> Point
+calculateAnchor { direction, originalSelection } =
+    let
+        { topLeft, bottomRight } = originalSelection
+
+        anchorX =
+            if List.member direction [ NorthEast, East, SouthEast ] then
+                topLeft.x
+            else if List.member direction [ North, South ] then
+                round (toFloat (topLeft.x + bottomRight.x) / 2)
+            else
+                bottomRight.x
+
+        anchorY =
+            if List.member direction [ SouthWest, South, SouthEast ] then
+               topLeft.y
+            else if List.member direction [ West, East ] then
+                round (toFloat (topLeft.y + bottomRight.y) / 2)
+            else
+                bottomRight.y
+
+    in
+        Point anchorX anchorY
+
 
 createRectangleFromMouse imageWidth aspectRatio anchor position =
     let
@@ -445,8 +467,8 @@ createMaxRectangleBottom imageHeight aspectRatio anchor position =
         orderEdges first second
         
 
-mapmin : (a -> comparable) -> a -> a -> a
-mapmin fn a b =
+minBy : (a -> comparable) -> a -> a -> a
+minBy fn a b =
     if fn b < fn a then
        b
    else

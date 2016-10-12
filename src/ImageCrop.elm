@@ -463,7 +463,7 @@ selectionView model cropArea =
                     [ selectionStyle displaySelection
                     , onMouseDown MoveStart
                     ]
-                    (borders ++ dragbars ++ handles)
+                    (borders ++ handles)
                 , shadow
                     [ ( "left", "0" )
                     , ( "top", "0" )
@@ -555,61 +555,6 @@ border position =
                   )
                 , ( "overflow", "hidden" )
                 , ( "background", "#fff url(http://jcrop.org/css/Jcrop.gif)" )
-                ]
-            ]
-            []
-
-
-dragbars : List (Html Msg)
-dragbars =
-    List.map
-        dragbar
-        [ PositionTop
-        , PositionRight
-        , PositionBottom
-        , PositionLeft
-        ]
-
-
-dragbar : Position -> Html Msg
-dragbar position =
-    let
-        ( cssPosition, orientation ) =
-            positionCssHelper position
-
-        ( direction, cursor ) =
-            case position of
-                PositionTop ->
-                    ( North, "n" )
-
-                PositionRight ->
-                    ( East, "e" )
-
-                PositionBottom ->
-                    ( South, "s" )
-
-                PositionLeft ->
-                    ( West, "w" )
-    in
-        div
-            [ onMouseDown (ResizeStart direction)
-            , style
-                [ ( "position", "absolute" )
-                , ( "width"
-                  , if orientation == Horizontal then
-                        "100%"
-                    else
-                        "9px"
-                  )
-                , ( "height"
-                  , if orientation == Vertical then
-                        "100%"
-                    else
-                        "9px"
-                  )
-                , ( cssPosition, "0" )
-                , ( "margin-" ++ cssPosition, "-5px" )
-                , ( "cursor", cursor ++ "-resize" )
                 ]
             ]
             []

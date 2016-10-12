@@ -326,7 +326,7 @@ resizeSelection model resize position =
 
                     smallestRectangle =
                        minBy
-                           (rectangleSize >> .width)
+                           (rectangleSize >> .height)
                 in
                    List.foldr
                        smallestRectangle

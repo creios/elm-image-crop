@@ -296,43 +296,175 @@ resizeSelection model resize position =
 
         normalizedPosition =
             scalePoint (relativeCoordinates position)
+    in
+        case model.aspectRatio of
+            Just aspectRatio ->
+                let
+                    anchor : Point
+                    anchor =
+                        { x = topLeft.x
+                        , y = round (toFloat (topLeft.y + bottomRight.y) / 2)
+                        }
 
-        firstX =
-            if List.member resize.direction [ NorthEast, East, SouthEast, South ] then
-                topLeft.x
-            else
-                bottomRight.x
+                    mouseRectangle =
+                        createRectangleFromMouse
+                            model.image.width
+                            aspectRatio
+                            anchor
+                            normalizedPosition
 
-        firstY =
-            if List.member resize.direction [ East, SouthEast, South, SouthWest ] then
-                topLeft.y
-            else
-                bottomRight.y
+                    firstEdgeConstraint =
+                        createMaxRectangleTop
+                            model.image.height
+                            aspectRatio
+                            anchor
+                            normalizedPosition
 
-        secondX =
-            if resize.direction == South then
-                bottomRight.x
-            else if resize.direction == North then
-                topLeft.x
-            else
-                normalizedPosition.x
+                    secondEdgeConstraint =
+                        createMaxRectangleBottom
+                            model.image.height
+                            aspectRatio
+                            anchor
+                            normalizedPosition
 
-        secondY =
-            if resize.direction == East then
-                bottomRight.y
-            else if resize.direction == West then
-                topLeft.y
-            else
-                normalizedPosition.y
+                    smallestRectangle =
+                       mapmin
+                           (rectangleSize >> .width)
+                in
+                   List.foldr
+                       smallestRectangle
+                       mouseRectangle
+                       [ firstEdgeConstraint
+                       , secondEdgeConstraint
+                       ]
+
+            Nothing ->
+                let
+                    firstX =
+                        if List.member resize.direction [ NorthEast, East, SouthEast, South ] then
+                            topLeft.x
+                        else
+                            bottomRight.x
+
+                    firstY =
+                        if List.member resize.direction [ East, SouthEast, South, SouthWest ] then
+                            topLeft.y
+                        else
+                            bottomRight.y
+
+                    secondX =
+                        if resize.direction == South then
+                            bottomRight.x
+                        else if resize.direction == North then
+                            topLeft.x
+                        else
+                            normalizedPosition.x
+
+                    secondY =
+                        if resize.direction == East then
+                            bottomRight.y
+                        else if resize.direction == West then
+                            topLeft.y
+                        else
+                            normalizedPosition.y
+
+                    first =
+                        Point firstX firstY
+
+                    second =
+                        Point secondX secondY
+                in
+                    normalizeEdges model.image first second
+
+createRectangleFromMouse imageWidth aspectRatio anchor position =
+    let
+        x : Int
+        x =
+            position.x
+                |> atLeast 0
+                |> atMost imageWidth
+
+        width : Int
+        width =
+            abs (x - anchor.x)
+
+        height : Int
+        height =
+            round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
 
         first =
-            Point firstX firstY
+            { x = anchor.x
+            , y = anchor.y - round (toFloat height / 2)
+            }
 
         second =
-            Point secondX secondY
+            { x = x
+            , y = anchor.y + round (toFloat height / 2)
+            }
     in
-        normalizeEdges model.image first second
+        orderEdges first second
 
+createMaxRectangleTop imageHeight aspectRatio anchor position =
+    let
+        height = anchor.y * 2
+        
+        factor = if position.x < anchor.x then -1 else 1
+
+        width = factor * (round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width))
+
+        first =
+           { x = anchor.x
+           , y = 0
+           }
+
+        second =
+           { x = anchor.x + width
+           , y = height
+           }
+    in
+        orderEdges first second
+
+createMaxRectangleBottom imageHeight aspectRatio anchor position =
+    let
+        height = (imageHeight - anchor.y) * 2
+
+        factor = if position.x < anchor.x then -1 else 1
+
+        width = factor * (round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width))
+        
+        first =
+           { x = anchor.x
+           , y = imageHeight - height
+           }
+
+        second =
+           { x = anchor.x + width
+           , y = imageHeight
+           }
+    in
+        orderEdges first second
+        
+
+mapmin : (a -> comparable) -> a -> a -> a
+mapmin fn a b =
+    if fn b < fn a then
+       b
+   else
+       a
+
+orderEdges first second =
+    { topLeft =
+        { x = min first.x second.x
+        , y = min first.y second.y
+        }
+    , bottomRight =
+        { x = max first.x second.x
+        , y = max first.y second.y
+        }
+    }
+
+absClamp n =
+    clamp -n n
 
 rectangleSize : Rectangle -> Size
 rectangleSize { topLeft, bottomRight } =

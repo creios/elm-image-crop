@@ -536,6 +536,17 @@ border position =
     let
         ( cssPosition, orientation ) =
             positionCssHelper position
+
+        -- Image taken from Jcrop: http://jcrop.org/css/Jcrop.gif
+        backgroundImage =
+            "R0lGODlhCAAIAJEAAKqqqv///wAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQJC"
+                ++ "gAAACwAAAAACAAIAAACDZQFCadrzVRMB9FZ5SwAIfkECQoAAAAsAAAAAAg"
+                ++ "ACAAAAg+ELqCYaudeW9ChyOyltQAAIfkECQoAAAAsAAAAAAgACAAAAg8Eh"
+                ++ "GKXm+rQYtC0WGl9oAAAIfkECQoAAAAsAAAAAAgACAAAAg+EhWKQernaYmj"
+                ++ "CWLF7qAAAIfkECQoAAAAsAAAAAAgACAAAAg2EISmna81UTAfRWeUsACH5B"
+                ++ "AkKAAAALAAAAAAIAAgAAAIPFA6imGrnXlvQocjspbUAACH5BAkKAAAALAA"
+                ++ "AAAAIAAgAAAIPlIBgl5vq0GLQtFhpfaIAACH5BAUKAAAALAAAAAAIAAgAA"
+                ++ "AIPlIFgknq52mJowlixe6gAADs="
     in
         div
             [ style
@@ -554,7 +565,7 @@ border position =
                         "1px"
                   )
                 , ( "overflow", "hidden" )
-                , ( "background", "#fff url(http://jcrop.org/css/Jcrop.gif)" )
+                , ( "background", "#fff url(data:image/gif;base64," ++ backgroundImage ++ ")" )
                 ]
             ]
             []

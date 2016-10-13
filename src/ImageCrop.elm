@@ -744,7 +744,7 @@ changeAspectRatio maybeAspectRatio model =
                         Just selection ->
                             let
                                 newSelection =
-                                    recalculateSelection aspectRatio selection
+                                    recalculateSelection model.image aspectRatio selection
                             in
                                { model | selection = Just newSelection }
 
@@ -756,8 +756,8 @@ changeAspectRatio maybeAspectRatio model =
     in
        { selectionUpdated | aspectRatio = maybeAspectRatio }
 
-recalculateSelection : Size -> Rectangle -> Rectangle
-recalculateSelection aspectRatio selection =
+recalculateSelection : Size -> Size -> Rectangle -> Rectangle
+recalculateSelection image aspectRatio selection =
     let
         area =
             rectangleArea selection
@@ -774,8 +774,21 @@ recalculateSelection aspectRatio selection =
             { x = topLeft.x + width
             , y = topLeft.y + height
             }
+
+        mouseSelection =
+            { selection | bottomRight = newBottomRight }
+
+        edgeConstraints =
+            createDiagonalBoundaryRectangles
+                image
+                aspectRatio
+                mouseSelection.topLeft
+                mouseSelection.bottomRight
     in
-        { selection | bottomRight = newBottomRight }
+        List.foldr
+            (minBy rectangleArea)
+            mouseSelection
+            edgeConstraints
 
 
 

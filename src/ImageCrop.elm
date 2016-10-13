@@ -261,15 +261,19 @@ movePoint movement point =
 
 normalizeEdges : Size -> Point -> Point -> Rectangle
 normalizeEdges canvas first second =
-    { topLeft =
-        { x = min first.x second.x |> atLeast 0
-        , y = min first.y second.y |> atLeast 0
+    let
+        ordered =
+            orderEdges first second
+    in
+        { topLeft =
+            { x = ordered.topLeft.x |> atLeast 0
+            , y = ordered.topLeft.y |> atLeast 0
+            }
+        , bottomRight =
+            { x = ordered.bottomRight.x |> atMost canvas.width
+            , y = ordered.bottomRight.y |> atMost canvas.height
+            }
         }
-    , bottomRight =
-        { x = max first.x second.x |> atMost canvas.width
-        , y = max first.y second.y |> atMost canvas.height
-        }
-    }
 
 
 resizeSelection : Model -> Resize -> Mouse.Position -> Rectangle
@@ -302,31 +306,13 @@ resizeSelection model resize position =
                 let
                     anchor =
                         calculateAnchor resize
-
-                    mouseRectangle =
-                        createResizeRectangleFromMouse
-                            model.image
-                            resize
-                            aspectRatio
-                            anchor
-                            normalizedPosition
-
-                    edgeConstraints =
-                        createMaxRectangles
-                            resize
-                            model.image
-                            aspectRatio
-                            anchor
-                            normalizedPosition
-
-                    smallestRectangle =
-                        minBy
-                            rectangleArea
                 in
-                    List.foldr
-                        smallestRectangle
-                        mouseRectangle
-                        edgeConstraints
+                    createAspectRatioSelection
+                        model.image
+                        aspectRatio
+                        (generalizeDirection resize.direction)
+                        anchor
+                        normalizedPosition
 
             Nothing ->
                 let
@@ -367,6 +353,46 @@ resizeSelection model resize position =
                     normalizeEdges model.image first second
 
 
+type GeneralDirection
+    = HorizontalDirection
+    | VerticalDirection
+    | DiagonalDirection
+
+
+generalizeDirection : Direction -> GeneralDirection
+generalizeDirection direction =
+    if List.member direction [ West, East ] then
+        HorizontalDirection
+    else if List.member direction [ North, South ] then
+        VerticalDirection
+    else
+        DiagonalDirection
+
+
+createAspectRatioSelection image aspectRatio generalDirection anchor position =
+    let
+        mouseRectangle =
+            createResizeRectangleFromMouse
+                image
+                generalDirection
+                aspectRatio
+                anchor
+                position
+
+        edgeConstraints =
+            createMaxRectangles
+                generalDirection
+                image
+                aspectRatio
+                anchor
+                position
+    in
+        List.foldr
+            (minBy rectangleArea)
+            mouseRectangle
+            edgeConstraints
+
+
 calculateAnchor : Resize -> Point
 calculateAnchor { direction, originalSelection } =
     let
@@ -392,58 +418,61 @@ calculateAnchor { direction, originalSelection } =
         Point anchorX anchorY
 
 
-createResizeRectangleFromMouse : Size -> Resize -> Size -> Point -> Point -> Rectangle
-createResizeRectangleFromMouse image { direction } aspectRatio anchor position =
-    if List.member direction [ West, East ] then
-        let
-            x =
-                position.x
-                    |> atLeast 0
-                    |> atMost image.width
+createResizeRectangleFromMouse : Size -> GeneralDirection -> Size -> Point -> Point -> Rectangle
+createResizeRectangleFromMouse image generalDirection aspectRatio anchor position =
+    case generalDirection of
+        HorizontalDirection ->
+            let
+                x =
+                    position.x
+                        |> atLeast 0
+                        |> atMost image.width
 
-            width =
-                abs (x - anchor.x)
+                width =
+                    abs (x - anchor.x)
 
-            height =
-                round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
+                height =
+                    heightFromWidth aspectRatio width
 
-            first =
-                { x = anchor.x
-                , y = anchor.y - round (toFloat height / 2)
-                }
+                first =
+                    { x = anchor.x
+                    , y = anchor.y - round (toFloat height / 2)
+                    }
 
-            second =
-                { x = x
-                , y = anchor.y + round (toFloat height / 2)
-                }
-        in
-            orderEdges first second
-    else if List.member direction [ North, South ] then
-        let
-            y =
-                position.y
-                    |> atLeast 0
-                    |> atMost image.height
+                second =
+                    { x = x
+                    , y = anchor.y + round (toFloat height / 2)
+                    }
+            in
+                orderEdges first second
 
-            height =
-                abs (y - anchor.y)
+        VerticalDirection ->
+            let
+                y =
+                    position.y
+                        |> atLeast 0
+                        |> atMost image.height
 
-            width =
-                round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+                height =
+                    abs (y - anchor.y)
 
-            first =
-                { x = anchor.x - round (toFloat width / 2)
-                , y = anchor.y
-                }
+                width =
+                    widthFromHeight aspectRatio height
 
-            second =
-                { x = anchor.x + round (toFloat width / 2)
-                , y = y
-                }
-        in
-            orderEdges first second
-    else
-        createSelectionFromMouse image aspectRatio anchor position
+                first =
+                    { x = anchor.x - round (toFloat width / 2)
+                    , y = anchor.y
+                    }
+
+                second =
+                    { x = anchor.x + round (toFloat width / 2)
+                    , y = y
+                    }
+            in
+                orderEdges first second
+
+        DiagonalDirection ->
+            createSelectionFromMouse image aspectRatio anchor position
 
 
 createSelectionFromMouse image aspectRatio anchor position =
@@ -460,7 +489,7 @@ createSelectionFromMouse image aspectRatio anchor position =
                         1
 
                 height =
-                    factor * round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
+                    factor * heightFromWidth aspectRatio width
 
                 target =
                     { x = position.x
@@ -481,7 +510,7 @@ createSelectionFromMouse image aspectRatio anchor position =
                         1
 
                 width =
-                    factor * round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+                    factor * widthFromHeight aspectRatio height
 
                 target =
                     { x = anchor.x + width
@@ -497,200 +526,177 @@ createSelectionFromMouse image aspectRatio anchor position =
             verticallyAlignedRectangle
 
 
-createMaxRectangles { direction } image aspectRatio anchor position =
-    if List.member direction [ West, East ] then
-        [ createMaxRectangleTop
-            image.height
-            aspectRatio
-            anchor
-            position
-        , createMaxRectangleBottom
-            image.height
-            aspectRatio
-            anchor
-            position
-        ]
-    else if List.member direction [ North, South ] then
-        [ createMaxRectangleLeft
-            image.width
-            aspectRatio
-            anchor
-            position
-        , createMaxRectangleRight
-            image.width
-            aspectRatio
-            anchor
-            position
-        ]
-    else
-        createDiagonalBoundaryRectangles image aspectRatio anchor position
-
-
-createDiagonalBoundaryRectangles image aspectRatio anchor position =
-    let
-        horizontalBoundary =
+createMaxRectangles generalDirection image aspectRatio anchor position =
+    case generalDirection of
+        HorizontalDirection ->
             let
-                boundaryValue =
-                    if position.x < anchor.x then
-                        0
-                    else
-                        image.width
+                topBoundaryRectangle =
+                    let
+                        height =
+                            anchor.y * 2
 
-                width =
-                    abs (boundaryValue - anchor.x)
+                        factor =
+                            if position.x < anchor.x then
+                                -1
+                            else
+                                1
 
-                factor =
-                    if position.y < anchor.y then
-                        -1
-                    else
-                        1
+                        width =
+                            factor * widthFromHeight aspectRatio height
 
-                height =
-                    factor * round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
+                        first =
+                            { x = anchor.x
+                            , y = 0
+                            }
 
-                target =
-                    { x = boundaryValue
-                    , y = anchor.y + height
-                    }
+                        second =
+                            { x = anchor.x + width
+                            , y = height
+                            }
+                    in
+                        orderEdges first second
+
+                bottomBoundaryRectangle =
+                    let
+                        height =
+                            (image.height - anchor.y) * 2
+
+                        factor =
+                            if position.x < anchor.x then
+                                -1
+                            else
+                                1
+
+                        width =
+                            factor * widthFromHeight aspectRatio height
+
+                        first =
+                            { x = anchor.x
+                            , y = image.height - height
+                            }
+
+                        second =
+                            { x = anchor.x + width
+                            , y = image.height
+                            }
+                    in
+                        orderEdges first second
             in
-                orderEdges anchor target
+                [ topBoundaryRectangle, bottomBoundaryRectangle ]
 
-        verticalBoundary =
+        VerticalDirection ->
             let
-                boundaryValue =
-                    if position.y < anchor.y then
-                        0
-                    else
-                        image.height
+                leftBoundaryRectangle =
+                    let
+                        width =
+                            anchor.x * 2
 
-                height =
-                    abs (boundaryValue - anchor.y)
+                        factor =
+                            if position.y < anchor.y then
+                                -1
+                            else
+                                1
 
-                factor =
-                    if position.x < anchor.x then
-                        -1
-                    else
-                        1
+                        height =
+                            factor * heightFromWidth aspectRatio width
 
-                width =
-                    factor * round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+                        first =
+                            { x = 0
+                            , y = anchor.y
+                            }
 
-                target =
-                    { x = anchor.x + width
-                    , y = boundaryValue
-                    }
+                        second =
+                            { x = width
+                            , y = anchor.y + height
+                            }
+                    in
+                        orderEdges first second
+
+                rightBoundaryRectangle =
+                    let
+                        width =
+                            (image.width - anchor.x) * 2
+
+                        factor =
+                            if position.y < anchor.y then
+                                -1
+                            else
+                                1
+
+                        height =
+                            factor * heightFromWidth aspectRatio width
+
+                        first =
+                            { x = image.width - width
+                            , y = anchor.y
+                            }
+
+                        second =
+                            { x = image.width
+                            , y = anchor.y + height
+                            }
+                    in
+                        orderEdges first second
             in
-                orderEdges anchor target
-    in
-        [ horizontalBoundary, verticalBoundary ]
+                [ leftBoundaryRectangle, rightBoundaryRectangle ]
 
+        DiagonalDirection ->
+            let
+                horizontalBoundary =
+                    let
+                        boundaryValue =
+                            if position.x < anchor.x then
+                                0
+                            else
+                                image.width
 
-createMaxRectangleTop imageHeight aspectRatio anchor position =
-    let
-        height =
-            anchor.y * 2
+                        width =
+                            abs (boundaryValue - anchor.x)
 
-        factor =
-            if position.x < anchor.x then
-                -1
-            else
-                1
+                        factor =
+                            if position.y < anchor.y then
+                                -1
+                            else
+                                1
 
-        width =
-            factor * (round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width))
+                        height =
+                            factor * heightFromWidth aspectRatio width
 
-        first =
-            { x = anchor.x
-            , y = 0
-            }
+                        target =
+                            { x = boundaryValue
+                            , y = anchor.y + height
+                            }
+                    in
+                        orderEdges anchor target
 
-        second =
-            { x = anchor.x + width
-            , y = height
-            }
-    in
-        orderEdges first second
+                verticalBoundary =
+                    let
+                        boundaryValue =
+                            if position.y < anchor.y then
+                                0
+                            else
+                                image.height
 
+                        height =
+                            abs (boundaryValue - anchor.y)
 
-createMaxRectangleBottom imageHeight aspectRatio anchor position =
-    let
-        height =
-            (imageHeight - anchor.y) * 2
+                        factor =
+                            if position.x < anchor.x then
+                                -1
+                            else
+                                1
 
-        factor =
-            if position.x < anchor.x then
-                -1
-            else
-                1
+                        width =
+                            factor * widthFromHeight aspectRatio height
 
-        width =
-            factor * (round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width))
-
-        first =
-            { x = anchor.x
-            , y = imageHeight - height
-            }
-
-        second =
-            { x = anchor.x + width
-            , y = imageHeight
-            }
-    in
-        orderEdges first second
-
-
-createMaxRectangleLeft imageWidth aspectRatio anchor position =
-    let
-        width =
-            anchor.x * 2
-
-        factor =
-            if position.y < anchor.y then
-                -1
-            else
-                1
-
-        height =
-            factor * (round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height))
-
-        first =
-            { x = 0
-            , y = anchor.y
-            }
-
-        second =
-            { x = width
-            , y = anchor.y + height
-            }
-    in
-        orderEdges first second
-
-
-createMaxRectangleRight imageWidth aspectRatio anchor position =
-    let
-        width =
-            (imageWidth - anchor.x) * 2
-
-        factor =
-            if position.y < anchor.y then
-                -1
-            else
-                1
-
-        height =
-            factor * (round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height))
-
-        first =
-            { x = imageWidth - width
-            , y = anchor.y
-            }
-
-        second =
-            { x = imageWidth
-            , y = anchor.y + height
-            }
-    in
-        orderEdges first second
+                        target =
+                            { x = anchor.x + width
+                            , y = boundaryValue
+                            }
+                    in
+                        orderEdges anchor target
+            in
+                [ horizontalBoundary, verticalBoundary ]
 
 
 minBy : (a -> comparable) -> a -> a -> a
@@ -709,6 +715,14 @@ maxBy fn a b =
         a
 
 
+widthFromHeight aspectRatio height =
+    round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+
+
+heightFromWidth aspectRatio width =
+    round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
+
+
 orderEdges first second =
     { topLeft =
         { x = min first.x second.x
@@ -719,10 +733,6 @@ orderEdges first second =
         , y = max first.y second.y
         }
     }
-
-
-absClamp n =
-    clamp -n n
 
 
 rectangleSize : Rectangle -> Size
@@ -763,25 +773,12 @@ createSelection select model position =
             selection =
                 case model.aspectRatio of
                     Just aspectRatio ->
-                        let
-                            mouseSelection =
-                                createSelectionFromMouse
-                                    model.image
-                                    aspectRatio
-                                    normalizedStart
-                                    normalizedPosition
-
-                            edgeConstraints =
-                                createDiagonalBoundaryRectangles
-                                    model.image
-                                    aspectRatio
-                                    normalizedStart
-                                    normalizedPosition
-                        in
-                            List.foldr
-                                (minBy rectangleArea)
-                                mouseSelection
-                                edgeConstraints
+                        createAspectRatioSelection
+                            model.image
+                            aspectRatio
+                            DiagonalDirection
+                            normalizedStart
+                            normalizedPosition
 
                     Nothing ->
                         normalizeEdges model.image normalizedStart normalizedPosition
@@ -845,21 +842,13 @@ recalculateSelection image aspectRatio selection =
             { x = topLeft.x + width
             , y = topLeft.y + height
             }
-
-        mouseSelection =
-            { selection | bottomRight = newBottomRight }
-
-        edgeConstraints =
-            createDiagonalBoundaryRectangles
-                image
-                aspectRatio
-                mouseSelection.topLeft
-                mouseSelection.bottomRight
     in
-        List.foldr
-            (minBy rectangleArea)
-            mouseSelection
-            edgeConstraints
+        createAspectRatioSelection
+            image
+            aspectRatio
+            DiagonalDirection
+            topLeft
+            newBottomRight
 
 
 rectangleArea : Rectangle -> Int

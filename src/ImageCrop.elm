@@ -4,6 +4,7 @@ module ImageCrop
         , Point
         , Size
         , Rectangle
+        , AspectRatio
         , Msg
         , init
         , update
@@ -28,7 +29,7 @@ type alias Model =
     , cropAreaWidth : Int
     , offset : Point
     , selection : Maybe Rectangle
-    , aspectRatio : Maybe Size
+    , aspectRatio : Maybe AspectRatio
     , move : Maybe Move
     , resize : Maybe Resize
     , select : Maybe Select
@@ -77,7 +78,13 @@ type alias Select =
     }
 
 
-init : Size -> Int -> Point -> Maybe Rectangle -> Maybe Size -> Model
+type alias AspectRatio =
+    { width : Float
+    , height : Float
+    }
+
+
+init : Size -> Int -> Point -> Maybe Rectangle -> Maybe AspectRatio -> Model
 init image cropAreaWidth offset selection aspectRatio =
     { image = image
     , cropAreaWidth = cropAreaWidth
@@ -418,7 +425,7 @@ calculateAnchor { direction, originalSelection } =
         Point anchorX anchorY
 
 
-createResizeRectangleFromMouse : Size -> GeneralDirection -> Size -> Point -> Point -> Rectangle
+createResizeRectangleFromMouse : Size -> GeneralDirection -> AspectRatio -> Point -> Point -> Rectangle
 createResizeRectangleFromMouse image generalDirection aspectRatio anchor position =
     case generalDirection of
         HorizontalDirection ->
@@ -716,11 +723,11 @@ maxBy fn a b =
 
 
 widthFromHeight aspectRatio height =
-    round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+    round (toFloat height / aspectRatio.height * aspectRatio.width)
 
 
 heightFromWidth aspectRatio width =
-    round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
+    round (toFloat width / aspectRatio.width * aspectRatio.height)
 
 
 orderEdges first second =
@@ -800,7 +807,7 @@ scalePoint factor point =
     }
 
 
-changeAspectRatio : Maybe Size -> Model -> Model
+changeAspectRatio : Maybe AspectRatio -> Model -> Model
 changeAspectRatio maybeAspectRatio model =
     let
         selectionUpdated =
@@ -823,17 +830,17 @@ changeAspectRatio maybeAspectRatio model =
         { selectionUpdated | aspectRatio = maybeAspectRatio }
 
 
-recalculateSelection : Size -> Size -> Rectangle -> Rectangle
+recalculateSelection : Size -> AspectRatio -> Rectangle -> Rectangle
 recalculateSelection image aspectRatio selection =
     let
         area =
             rectangleArea selection
 
         height =
-            round (sqrt (toFloat area / (toFloat aspectRatio.width / toFloat aspectRatio.height)))
+            round (sqrt (toFloat area / (aspectRatio.width / aspectRatio.height)))
 
         width =
-            round (sqrt (toFloat area * (toFloat aspectRatio.width / toFloat aspectRatio.height)))
+            round (sqrt (toFloat area * (aspectRatio.width / aspectRatio.height)))
 
         { topLeft } =
             selection

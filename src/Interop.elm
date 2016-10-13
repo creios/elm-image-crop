@@ -10,7 +10,7 @@ type alias Flags =
     , cropAreaWidth : Int
     , offset : ImageCrop.Point
     , selection : Maybe ImageCrop.Rectangle
-    , aspectRatio : Maybe ImageCrop.Size
+    , aspectRatio : Maybe ImageCrop.AspectRatio
     }
 
 
@@ -23,7 +23,7 @@ init { image, cropAreaWidth, offset, selection, aspectRatio } =
 
 type Msg
     = ViewportChanged Int
-    | ChangeAspectRatio (Maybe ImageCrop.Size)
+    | ChangeAspectRatio (Maybe ImageCrop.AspectRatio)
     | ImageCropMsg ImageCrop.Msg
 
 
@@ -78,4 +78,4 @@ port selectionChanged : Maybe ImageCrop.Rectangle -> Cmd msg
 port viewportChanged : (Int -> msg) -> Sub msg
 
 
-port changeAspectRatio : (Maybe ImageCrop.Size -> msg) -> Sub msg
+port changeAspectRatio : (Maybe ImageCrop.AspectRatio -> msg) -> Sub msg

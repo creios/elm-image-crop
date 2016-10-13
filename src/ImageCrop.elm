@@ -323,10 +323,10 @@ resizeSelection model resize position =
                         minBy
                             rectangleArea
                 in
-                   List.foldr
-                       smallestRectangle
-                       mouseRectangle
-                       edgeConstraints
+                    List.foldr
+                        smallestRectangle
+                        mouseRectangle
+                        edgeConstraints
 
             Nothing ->
                 let
@@ -366,10 +366,12 @@ resizeSelection model resize position =
                 in
                     normalizeEdges model.image first second
 
+
 calculateAnchor : Resize -> Point
 calculateAnchor { direction, originalSelection } =
     let
-        { topLeft, bottomRight } = originalSelection
+        { topLeft, bottomRight } =
+            originalSelection
 
         anchorX =
             if List.member direction [ NorthEast, East, SouthEast ] then
@@ -381,12 +383,11 @@ calculateAnchor { direction, originalSelection } =
 
         anchorY =
             if List.member direction [ SouthWest, South, SouthEast ] then
-               topLeft.y
+                topLeft.y
             else if List.member direction [ West, East ] then
                 round (toFloat (topLeft.y + bottomRight.y) / 2)
             else
                 bottomRight.y
-
     in
         Point anchorX anchorY
 
@@ -449,11 +450,17 @@ createSelectionFromMouse image aspectRatio anchor position =
     let
         horizontallyAlignedRectangle =
             let
-                width = abs (position.x - anchor.x)
+                width =
+                    abs (position.x - anchor.x)
 
-                factor = if position.y < anchor.y then -1 else 1
+                factor =
+                    if position.y < anchor.y then
+                        -1
+                    else
+                        1
 
-                height = factor * round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
+                height =
+                    factor * round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
 
                 target =
                     { x = position.x
@@ -464,11 +471,17 @@ createSelectionFromMouse image aspectRatio anchor position =
 
         verticallyAlignedRectangle =
             let
-                height = abs (position.y - anchor.y)
+                height =
+                    abs (position.y - anchor.y)
 
-                factor = if position.x < anchor.x then -1 else 1
+                factor =
+                    if position.x < anchor.x then
+                        -1
+                    else
+                        1
 
-                width = factor * round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+                width =
+                    factor * round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
 
                 target =
                     { x = anchor.x + width
@@ -477,25 +490,37 @@ createSelectionFromMouse image aspectRatio anchor position =
             in
                 orderEdges anchor target
     in
-        maxBy -- You can use minBy here instead to alter the behaviour
+        maxBy
+            -- You can use minBy here instead to alter the behaviour
             rectangleArea
             horizontallyAlignedRectangle
             verticallyAlignedRectangle
 
 
-
 createMaxRectangles { direction } image aspectRatio anchor position =
     if List.member direction [ West, East ] then
         [ createMaxRectangleTop
-            image.height aspectRatio anchor position
+            image.height
+            aspectRatio
+            anchor
+            position
         , createMaxRectangleBottom
-            image.height aspectRatio anchor position
+            image.height
+            aspectRatio
+            anchor
+            position
         ]
     else if List.member direction [ North, South ] then
         [ createMaxRectangleLeft
-            image.width aspectRatio anchor position
+            image.width
+            aspectRatio
+            anchor
+            position
         , createMaxRectangleRight
-            image.width aspectRatio anchor position
+            image.width
+            aspectRatio
+            anchor
+            position
         ]
     else
         createDiagonalBoundaryRectangles image aspectRatio anchor position
@@ -506,13 +531,19 @@ createDiagonalBoundaryRectangles image aspectRatio anchor position =
         horizontalBoundary =
             let
                 boundaryValue =
-                    if position.x < anchor.x then 0 else image.width
+                    if position.x < anchor.x then
+                        0
+                    else
+                        image.width
 
                 width =
                     abs (boundaryValue - anchor.x)
 
                 factor =
-                    if position.y < anchor.y then -1 else 1
+                    if position.y < anchor.y then
+                        -1
+                    else
+                        1
 
                 height =
                     factor * round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
@@ -522,18 +553,24 @@ createDiagonalBoundaryRectangles image aspectRatio anchor position =
                     , y = anchor.y + height
                     }
             in
-               orderEdges anchor target
+                orderEdges anchor target
 
         verticalBoundary =
             let
                 boundaryValue =
-                    if position.y < anchor.y then 0 else image.height
+                    if position.y < anchor.y then
+                        0
+                    else
+                        image.height
 
                 height =
                     abs (boundaryValue - anchor.y)
 
                 factor =
-                    if position.x < anchor.x then -1 else 1
+                    if position.x < anchor.x then
+                        -1
+                    else
+                        1
 
                 width =
                     factor * round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
@@ -543,87 +580,115 @@ createDiagonalBoundaryRectangles image aspectRatio anchor position =
                     , y = boundaryValue
                     }
             in
-               orderEdges anchor target
+                orderEdges anchor target
     in
-       [ horizontalBoundary, verticalBoundary ]
+        [ horizontalBoundary, verticalBoundary ]
+
 
 createMaxRectangleTop imageHeight aspectRatio anchor position =
     let
-        height = anchor.y * 2
+        height =
+            anchor.y * 2
 
-        factor = if position.x < anchor.x then -1 else 1
+        factor =
+            if position.x < anchor.x then
+                -1
+            else
+                1
 
-        width = factor * (round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width))
+        width =
+            factor * (round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width))
 
         first =
-           { x = anchor.x
-           , y = 0
-           }
+            { x = anchor.x
+            , y = 0
+            }
 
         second =
-           { x = anchor.x + width
-           , y = height
-           }
+            { x = anchor.x + width
+            , y = height
+            }
     in
         orderEdges first second
+
 
 createMaxRectangleBottom imageHeight aspectRatio anchor position =
     let
-        height = (imageHeight - anchor.y) * 2
+        height =
+            (imageHeight - anchor.y) * 2
 
-        factor = if position.x < anchor.x then -1 else 1
+        factor =
+            if position.x < anchor.x then
+                -1
+            else
+                1
 
-        width = factor * (round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width))
+        width =
+            factor * (round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width))
 
         first =
-           { x = anchor.x
-           , y = imageHeight - height
-           }
+            { x = anchor.x
+            , y = imageHeight - height
+            }
 
         second =
-           { x = anchor.x + width
-           , y = imageHeight
-           }
+            { x = anchor.x + width
+            , y = imageHeight
+            }
     in
         orderEdges first second
+
 
 createMaxRectangleLeft imageWidth aspectRatio anchor position =
     let
-        width = anchor.x * 2
+        width =
+            anchor.x * 2
 
-        factor = if position.y < anchor.y then -1 else 1
+        factor =
+            if position.y < anchor.y then
+                -1
+            else
+                1
 
-        height = factor * (round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height))
+        height =
+            factor * (round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height))
 
         first =
-           { x = 0
-           , y = anchor.y
-           }
+            { x = 0
+            , y = anchor.y
+            }
 
         second =
-           { x = width
-           , y = anchor.y + height
-           }
+            { x = width
+            , y = anchor.y + height
+            }
     in
         orderEdges first second
 
+
 createMaxRectangleRight imageWidth aspectRatio anchor position =
     let
-        width = (imageWidth - anchor.x) * 2
+        width =
+            (imageWidth - anchor.x) * 2
 
-        factor = if position.y < anchor.y then -1 else 1
+        factor =
+            if position.y < anchor.y then
+                -1
+            else
+                1
 
-        height = factor * (round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height))
+        height =
+            factor * (round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height))
 
         first =
-           { x = imageWidth - width
-           , y = anchor.y
-           }
+            { x = imageWidth - width
+            , y = anchor.y
+            }
 
         second =
-           { x = imageWidth
-           , y = anchor.y + height
-           }
+            { x = imageWidth
+            , y = anchor.y + height
+            }
     in
         orderEdges first second
 
@@ -635,12 +700,14 @@ minBy fn a b =
     else
         a
 
+
 maxBy : (a -> comparable) -> a -> a -> a
 maxBy fn a b =
     if fn b > fn a then
         b
     else
         a
+
 
 orderEdges first second =
     { topLeft =
@@ -653,8 +720,10 @@ orderEdges first second =
         }
     }
 
+
 absClamp n =
     clamp -n n
+
 
 rectangleSize : Rectangle -> Size
 rectangleSize { topLeft, bottomRight } =
@@ -746,7 +815,7 @@ changeAspectRatio maybeAspectRatio model =
                                 newSelection =
                                     recalculateSelection model.image aspectRatio selection
                             in
-                               { model | selection = Just newSelection }
+                                { model | selection = Just newSelection }
 
                         Nothing ->
                             model
@@ -754,7 +823,8 @@ changeAspectRatio maybeAspectRatio model =
                 Nothing ->
                     model
     in
-       { selectionUpdated | aspectRatio = maybeAspectRatio }
+        { selectionUpdated | aspectRatio = maybeAspectRatio }
+
 
 recalculateSelection : Size -> Size -> Rectangle -> Rectangle
 recalculateSelection image aspectRatio selection =
@@ -768,7 +838,8 @@ recalculateSelection image aspectRatio selection =
         width =
             round (sqrt (toFloat area * (toFloat aspectRatio.width / toFloat aspectRatio.height)))
 
-        { topLeft } = selection
+        { topLeft } =
+            selection
 
         newBottomRight =
             { x = topLeft.x + width
@@ -791,13 +862,15 @@ recalculateSelection image aspectRatio selection =
             edgeConstraints
 
 
-
 rectangleArea : Rectangle -> Int
 rectangleArea rectangle =
     let
-        size = rectangleSize rectangle
+        size =
+            rectangleSize rectangle
     in
         size.width * size.height
+
+
 
 -- Subscriptions
 

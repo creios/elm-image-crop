@@ -78,4 +78,4 @@ port selectionChanged : Maybe ImageCrop.Rectangle -> Cmd msg
 port viewportChanged : (Int -> msg) -> Sub msg
 
 
-port changeAspectRatio : ((Maybe ImageCrop.Size) -> msg) -> Sub msg
+port changeAspectRatio : (Maybe ImageCrop.Size -> msg) -> Sub msg

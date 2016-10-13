@@ -498,8 +498,54 @@ createMaxRectangles { direction } image aspectRatio anchor position =
             image.width aspectRatio anchor position
         ]
     else
-        []
+        createDiagonalBoundaryRectangles image aspectRatio anchor position
 
+
+createDiagonalBoundaryRectangles image aspectRatio anchor position =
+    let
+        horizontalBoundary =
+            let
+                boundaryValue =
+                    if position.x < anchor.x then 0 else image.width
+
+                width =
+                    abs (boundaryValue - anchor.x)
+
+                factor =
+                    if position.y < anchor.y then -1 else 1
+
+                height =
+                    factor * round (toFloat width / toFloat aspectRatio.width * toFloat aspectRatio.height)
+
+                target =
+                    { x = boundaryValue
+                    , y = anchor.y + height
+                    }
+            in
+               orderEdges anchor target
+
+        verticalBoundary =
+            let
+                boundaryValue =
+                    if position.y < anchor.y then 0 else image.height
+
+                height =
+                    abs (boundaryValue - anchor.y)
+
+                factor =
+                    if position.x < anchor.x then -1 else 1
+
+                width =
+                    factor * round (toFloat height / toFloat aspectRatio.height * toFloat aspectRatio.width)
+
+                target =
+                    { x = anchor.x + width
+                    , y = boundaryValue
+                    }
+            in
+               orderEdges anchor target
+    in
+       [ horizontalBoundary, verticalBoundary ]
 
 createMaxRectangleTop imageHeight aspectRatio anchor position =
     let
@@ -648,7 +694,25 @@ createSelection select model position =
             selection =
                 case model.aspectRatio of
                     Just aspectRatio ->
-                        createSelectionFromMouse model.image aspectRatio normalizedStart normalizedPosition
+                        let
+                            mouseSelection =
+                                createSelectionFromMouse
+                                    model.image
+                                    aspectRatio
+                                    normalizedStart
+                                    normalizedPosition
+
+                            edgeConstraints =
+                                createDiagonalBoundaryRectangles
+                                    model.image
+                                    aspectRatio
+                                    normalizedStart
+                                    normalizedPosition
+                        in
+                            List.foldr
+                                (minBy rectangleArea)
+                                mouseSelection
+                                edgeConstraints
 
                     Nothing ->
                         normalizeEdges model.image normalizedStart normalizedPosition

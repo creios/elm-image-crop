@@ -3,7 +3,7 @@
   "version": "0.5.0",
   "description": "Responsive image crop written in elm",
   "scripts": {
-    "prepublish": "elm-make src/Interop.elm --output=dist/interop.js"
+    "prepublish": "elm-make src/ImageCrop/Interop.elm --output=dist/image-crop.interop.js"
   },
   "repository": {
     "type": "git",

@@ -1,4 +1,4 @@
-port module Interop exposing (main, viewportChanged)
+port module ImageCrop.Interop exposing (main, viewportChanged)
 
 import Html exposing (Html)
 import Html.App

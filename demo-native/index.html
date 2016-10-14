@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/> 
+        <script src="../dist/image-crop.interop.js"></script>
+        <script src="main.js"></script>
+        <title>Javscript Interop Demo</title>
+    </head>
+    <body style="margin: 8px;">
+        <div style="position: relative">
+            <img src="https://unsplash.it/900/600?image=1067" width="900" height="600" style="max-width: 100%; height: auto;" id="image">
+            <div id="main"></div>
+            <!--<object style="display: block; pointer-events: none; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color: transparent; z-index: -100;" data="about:blank" id="resize-detector"></object>-->
+        </div>
+        <div id="coordinates">
+            (<span id="top-left-x">0</span>|<span id="top-left-y">0</span>),
+            (<span id="bottom-right-x">100</span>|<span id="bottom-right-y">100</span>)
+        </div>
+        <form id="aspect-ratio-form">
+            Aspect Ratio
+            <label>
+                Width
+                <input type="number" step="any" min="1" id="aspect-ratio-width-input"/>
+            </label>
+            <label>
+                Height
+                <input type="number" step="any" min="1" id="aspect-ratio-height-input"/>
+            </label>
+            <button>Set</button>
+        </form>
+    </body>
+</html>

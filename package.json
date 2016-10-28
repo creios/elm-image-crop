@@ -17,5 +17,6 @@
   "homepage": "https://github.com/creios/elm-image-crop#readme",
   "devDependencies": {
     "elm": "^0.17.1"
-  }
+  },
+  "types": "./elm-image-crop.d.ts"
 }

@@ -1,15 +1,14 @@
 module Main exposing (..)
 
 import Html exposing (..)
-import Html.App exposing (program)
-import Html.Attributes exposing (style, src, width, height, value, type')
+import Html.Attributes exposing (style, src, width, height, value, type_)
 import Html.Events exposing (onInput)
 import ImageCrop
 import Platform.Cmd
 import String exposing (toInt)
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
     program
         { init = init
@@ -80,11 +79,11 @@ update msg model =
     case msg of
         ImageCropMsg msg ->
             let
-                ( model, cmd ) =
+                ( newModel, newCmd ) =
                     ImageCrop.update msg model
             in
-                ( model
-                , Platform.Cmd.map ImageCropMsg cmd
+                ( newModel
+                , Platform.Cmd.map ImageCropMsg newCmd
                 )
 
         TopLeftX value ->
@@ -187,7 +186,7 @@ view model =
             ]
         ]
         [ unsplashit model.image model.cropAreaWidth
-        , Html.App.map
+        , Html.map
             ImageCropMsg
             (ImageCrop.view model)
         , debugForm model.selection
@@ -236,7 +235,7 @@ debugForm selection =
 coordinateInput : (String -> Msg) -> Int -> Html Msg
 coordinateInput msg val =
     input
-        [ type' "number"
+        [ type_ "number"
         , value (toString val)
         , onInput msg
         ]

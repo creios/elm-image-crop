@@ -1,7 +1,6 @@
 port module ImageCrop.Interop exposing (main, viewportChanged)
 
 import Html exposing (Html)
-import Html.App
 import ImageCrop
 
 
@@ -27,9 +26,9 @@ type Msg
     | ImageCropMsg ImageCrop.Msg
 
 
-main : Program Flags
+main : Program Flags ImageCrop.Model Msg
 main =
-    Html.App.programWithFlags
+    Html.programWithFlags
         { init = init
         , view = view
         , update = update
@@ -49,14 +48,14 @@ update msg model =
                     ImageCrop.changeAspectRatio aspectRatio model
 
                 ImageCropMsg msg ->
-                    fst (ImageCrop.update msg model)
+                    Tuple.first (ImageCrop.update msg model)
     in
         ( newModel, selectionChanged newModel.selection )
 
 
 view : ImageCrop.Model -> Html Msg
 view model =
-    Html.App.map ImageCropMsg (ImageCrop.view model)
+    Html.map ImageCropMsg (ImageCrop.view model)
 
 
 subscriptions : ImageCrop.Model -> Sub Msg

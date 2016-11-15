@@ -14,11 +14,10 @@ module ImageCrop
         )
 
 import Html exposing (..)
-import Html.App
 import Html.Attributes exposing (style)
 import Html.Events exposing (onWithOptions)
 import Mouse exposing (Position)
-import Json.Decode as Json exposing ((:=))
+import Json.Decode as Json exposing (field)
 
 
 -- Model
@@ -1208,8 +1207,8 @@ type alias MouseButtonEvent =
 
 
 mouseEventDecoder =
-    Json.object3
+    Json.map3
         (\x y button -> MouseButtonEvent (Mouse.Position x y) button)
-        ("pageX" := Json.int)
-        ("pageY" := Json.int)
-        ("button" := Json.int)
+        (field "pageX" Json.int)
+        (field "pageY" Json.int)
+        (field "button" Json.int)

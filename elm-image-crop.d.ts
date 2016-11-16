@@ -23,7 +23,7 @@ declare namespace ElmImageCrop {
         image: Size;
         cropAreaWidth: number;
         offset: Point;
-        selection: Rectangle;
+        selection?: Rectangle;
         aspectRatio?: Size;
     }
   

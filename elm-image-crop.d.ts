@@ -23,8 +23,8 @@ declare namespace ElmImageCrop {
         image: Size;
         cropAreaWidth: number;
         offset: Point;
-        selection?: Rectangle;
-        aspectRatio?: Size;
+        selection: Rectangle | null;
+        aspectRatio: Size | null;
     }
   
     export interface Size {
@@ -61,6 +61,6 @@ declare namespace ElmImageCrop {
     }
   
     export interface ChangeAspectRatio {
-        send(aspectRatio?: Size): void;
+        send(aspectRatio: Size | null): void;
     }
 }

@@ -57,7 +57,7 @@ declare namespace ElmImageCrop {
     }
   
     export interface SelectionChanged {
-        subscribe(callback: (selection: Selection) => void): void;
+        subscribe(callback: (selection: Rectangle | null) => void): void;
     }
   
     export interface ChangeAspectRatio {

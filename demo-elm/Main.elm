@@ -185,7 +185,7 @@ view model =
             , ( "margin", "20px" )
             ]
         ]
-        [ unsplashit model.image model.cropAreaWidth
+        [ placeholdit model.image model.cropAreaWidth
         , Html.map
             ImageCropMsg
             (ImageCrop.view model)
@@ -193,10 +193,10 @@ view model =
         ]
 
 
-unsplashit : ImageCrop.Size -> Int -> Html Msg
-unsplashit size displayWidth =
+placeholdit : ImageCrop.Size -> Int -> Html Msg
+placeholdit size displayWidth =
     img
-        [ src ("https://unsplash.it/" ++ toString size.width ++ "/" ++ toString size.height ++ "?image=1067")
+        [ src ("https://placehold.it/" ++ toString size.width ++ "x" ++ toString size.height)
         , width size.width
         , height size.height
         , style

@@ -41,7 +41,7 @@ type alias Size =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Initializing { x = 8, y = 8 } { width = 1800, height = 1200 }, ready () )
+    ( Initializing { x = 20, y = 20 } { width = 1800, height = 1200 }, ready () )
 
 
 

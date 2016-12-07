@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/> 
+        <script src="dist/main.js"></script>
+        <title>Elm Image Crop Demo</title>
+        <script>
+window.addEventListener('load', function () {
+    var app = Elm.Main.fullscreen({
+        cropAreaWidth: 900,
+        offset: {x: 8, y: 8}
+    });
+    window.addEventListener('resize', function () {
+        app.ports.viewportChanged.send(getImageWidth());
+    });
+    function getImageWidth() {
+        var image = document.getElementById('image');
+        return +getComputedStyle(image).width.replace('px', '');
+    }
+});
+        </script>
+    </head>
+    <body style="margin: 8px;">
+    </body>
+</html>

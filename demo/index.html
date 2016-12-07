@@ -6,17 +6,14 @@
         <title>Elm Image Crop Demo</title>
         <script>
 window.addEventListener('load', function () {
-    var app = Elm.Main.fullscreen({
-        cropAreaWidth: 900,
-        offset: {x: 8, y: 8}
-    });
-    window.addEventListener('resize', function () {
-        app.ports.viewportChanged.send(getImageWidth());
-    });
-    function getImageWidth() {
+    var app = Elm.Main.fullscreen();
+    function updateViewport() {
         var image = document.getElementById('image');
-        return +getComputedStyle(image).width.replace('px', '');
+        var width = +getComputedStyle(image).width.replace('px', '');
+        app.ports.viewportChanged.send(width);
     }
+    window.addEventListener('resize', updateViewport);
+    app.ports.ready.subscribe(updateViewport);
 });
         </script>
     </head>

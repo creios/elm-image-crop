@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/> 
+        <script src="dist/main.js"></script>
+        <title>Elm Image Crop Demo</title>
+        <script>
+window.addEventListener('load', function () {
+    var app = Elm.Main.fullscreen();
+    function updateViewport() {
+        var image = document.getElementById('image');
+        var width = +getComputedStyle(image).width.replace('px', '');
+        app.ports.viewportChanged.send(width);
+    }
+    window.addEventListener('resize', updateViewport);
+    app.ports.ready.subscribe(updateViewport);
+});
+        </script>
+    </head>
+    <body style="margin: 20px;">
+    </body>
+</html>

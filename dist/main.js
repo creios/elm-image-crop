@@ -13405,26 +13405,57 @@ var _user$project$ImageCrop$SelectAt = function (a) {
 var _user$project$ImageCrop$SelectStart = function (a) {
 	return {ctor: 'SelectStart', _0: a};
 };
-var _user$project$ImageCrop$shadow = function (positioning) {
-	var styles = {
-		ctor: '::',
-		_0: {ctor: '_Tuple2', _0: 'background-color', _1: '#000000'},
-		_1: {
-			ctor: '::',
-			_0: {ctor: '_Tuple2', _0: 'opacity', _1: '0.5'},
-			_1: {
-				ctor: '::',
-				_0: {ctor: '_Tuple2', _0: 'position', _1: 'absolute'},
-				_1: {ctor: '[]'}
-			}
-		}
-	};
+var _user$project$ImageCrop$shadow = function (position) {
 	return A2(
 		_elm_lang$html$Html$div,
 		{
 			ctor: '::',
 			_0: _elm_lang$html$Html_Attributes$style(
-				A2(_elm_lang$core$Basics_ops['++'], styles, positioning)),
+				{
+					ctor: '::',
+					_0: {ctor: '_Tuple2', _0: 'background-color', _1: '#000000'},
+					_1: {
+						ctor: '::',
+						_0: {ctor: '_Tuple2', _0: 'opacity', _1: '0.5'},
+						_1: {
+							ctor: '::',
+							_0: {ctor: '_Tuple2', _0: 'position', _1: 'absolute'},
+							_1: {
+								ctor: '::',
+								_0: {
+									ctor: '_Tuple2',
+									_0: 'left',
+									_1: _user$project$ImageCrop$px(position.topLeft.x)
+								},
+								_1: {
+									ctor: '::',
+									_0: {
+										ctor: '_Tuple2',
+										_0: 'top',
+										_1: _user$project$ImageCrop$px(position.topLeft.y)
+									},
+									_1: {
+										ctor: '::',
+										_0: {
+											ctor: '_Tuple2',
+											_0: 'width',
+											_1: _user$project$ImageCrop$px(position.bottomRight.x - position.topLeft.x)
+										},
+										_1: {
+											ctor: '::',
+											_0: {
+												ctor: '_Tuple2',
+												_0: 'height',
+												_1: _user$project$ImageCrop$px(position.bottomRight.y - position.topLeft.y)
+											},
+											_1: {ctor: '[]'}
+										}
+									}
+								}
+							}
+						}
+					}
+				}),
 			_1: {
 				ctor: '::',
 				_0: _user$project$ImageCrop$onMouseDown(_user$project$ImageCrop$SelectStart),
@@ -14185,118 +14216,46 @@ var _user$project$ImageCrop$selectionView = F2(
 					ctor: '::',
 					_0: _user$project$ImageCrop$shadow(
 						{
-							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: 'left', _1: '0'},
-							_1: {
-								ctor: '::',
-								_0: {ctor: '_Tuple2', _0: 'top', _1: '0'},
-								_1: {
-									ctor: '::',
-									_0: {
-										ctor: '_Tuple2',
-										_0: 'width',
-										_1: _user$project$ImageCrop$px(
-											A2(_user$project$ImageCrop$atLeast, 0, displaySelection.topLeft.x - 1))
-									},
-									_1: {
-										ctor: '::',
-										_0: {ctor: '_Tuple2', _0: 'height', _1: '100%'},
-										_1: {ctor: '[]'}
-									}
-								}
+							topLeft: {x: 0, y: 0},
+							bottomRight: {
+								x: A2(_user$project$ImageCrop$atLeast, 0, displaySelection.topLeft.x - 1),
+								y: cropArea.height
 							}
 						}),
 					_1: {
 						ctor: '::',
 						_0: _user$project$ImageCrop$shadow(
 							{
-								ctor: '::',
-								_0: {ctor: '_Tuple2', _0: 'right', _1: '0'},
-								_1: {
-									ctor: '::',
-									_0: {ctor: '_Tuple2', _0: 'top', _1: '0'},
-									_1: {
-										ctor: '::',
-										_0: {
-											ctor: '_Tuple2',
-											_0: 'width',
-											_1: _user$project$ImageCrop$px(
-												A2(_user$project$ImageCrop$atLeast, 0, (cropArea.width - displaySelection.bottomRight.x) - 1))
-										},
-										_1: {
-											ctor: '::',
-											_0: {ctor: '_Tuple2', _0: 'height', _1: '100%'},
-											_1: {ctor: '[]'}
-										}
-									}
-								}
+								topLeft: {
+									x: A2(_user$project$ImageCrop$atMost, cropArea.width, displaySelection.bottomRight.x + 1),
+									y: 0
+								},
+								bottomRight: {x: cropArea.width, y: cropArea.height}
 							}),
 						_1: {
 							ctor: '::',
 							_0: _user$project$ImageCrop$shadow(
 								{
-									ctor: '::',
-									_0: {
-										ctor: '_Tuple2',
-										_0: 'left',
-										_1: _user$project$ImageCrop$px(displaySelection.topLeft.x - 1)
+									topLeft: {
+										x: A2(_user$project$ImageCrop$atLeast, 0, displaySelection.topLeft.x - 1),
+										y: 0
 									},
-									_1: {
-										ctor: '::',
-										_0: {ctor: '_Tuple2', _0: 'top', _1: '0'},
-										_1: {
-											ctor: '::',
-											_0: {
-												ctor: '_Tuple2',
-												_0: 'width',
-												_1: _user$project$ImageCrop$px(
-													_user$project$ImageCrop$rectangleSize(displaySelection).width + 2)
-											},
-											_1: {
-												ctor: '::',
-												_0: {
-													ctor: '_Tuple2',
-													_0: 'height',
-													_1: _user$project$ImageCrop$px(
-														A2(_user$project$ImageCrop$atLeast, 0, displaySelection.topLeft.y - 1))
-												},
-												_1: {ctor: '[]'}
-											}
-										}
+									bottomRight: {
+										x: A2(_user$project$ImageCrop$atMost, cropArea.width, displaySelection.bottomRight.x + 1),
+										y: A2(_user$project$ImageCrop$atLeast, 0, displaySelection.topLeft.y - 1)
 									}
 								}),
 							_1: {
 								ctor: '::',
 								_0: _user$project$ImageCrop$shadow(
 									{
-										ctor: '::',
-										_0: {
-											ctor: '_Tuple2',
-											_0: 'left',
-											_1: _user$project$ImageCrop$px(displaySelection.topLeft.x - 1)
+										topLeft: {
+											x: A2(_user$project$ImageCrop$atLeast, 0, displaySelection.topLeft.x - 1),
+											y: displaySelection.bottomRight.y
 										},
-										_1: {
-											ctor: '::',
-											_0: {ctor: '_Tuple2', _0: 'bottom', _1: '0'},
-											_1: {
-												ctor: '::',
-												_0: {
-													ctor: '_Tuple2',
-													_0: 'width',
-													_1: _user$project$ImageCrop$px(
-														_user$project$ImageCrop$rectangleSize(displaySelection).width + 2)
-												},
-												_1: {
-													ctor: '::',
-													_0: {
-														ctor: '_Tuple2',
-														_0: 'height',
-														_1: _user$project$ImageCrop$px(
-															A2(_user$project$ImageCrop$atLeast, 0, (cropArea.height - displaySelection.bottomRight.y) - 1))
-													},
-													_1: {ctor: '[]'}
-												}
-											}
+										bottomRight: {
+											x: A2(_user$project$ImageCrop$atMost, cropArea.width, displaySelection.bottomRight.x + 1),
+											y: cropArea.height
 										}
 									}),
 								_1: {ctor: '[]'}
@@ -14310,29 +14269,8 @@ var _user$project$ImageCrop$selectionView = F2(
 				ctor: '::',
 				_0: _user$project$ImageCrop$shadow(
 					{
-						ctor: '::',
-						_0: {ctor: '_Tuple2', _0: 'left', _1: '0'},
-						_1: {
-							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: 'top', _1: '0'},
-							_1: {
-								ctor: '::',
-								_0: {
-									ctor: '_Tuple2',
-									_0: 'width',
-									_1: _user$project$ImageCrop$px(cropArea.width)
-								},
-								_1: {
-									ctor: '::',
-									_0: {
-										ctor: '_Tuple2',
-										_0: 'height',
-										_1: _user$project$ImageCrop$px(cropArea.height)
-									},
-									_1: {ctor: '[]'}
-								}
-							}
-						}
+						topLeft: {x: 0, y: 0},
+						bottomRight: {x: cropArea.width, y: cropArea.height}
 					}),
 				_1: {ctor: '[]'}
 			};
@@ -14576,34 +14514,59 @@ var _user$project$Main$subscriptions = function (model) {
 		});
 };
 var _user$project$Main$view = function (model) {
-	var children = function () {
+	var controls = function () {
 		var _p8 = model;
 		if (_p8.ctor === 'Initializing') {
+			return {ctor: '[]'};
+		} else {
 			return {
 				ctor: '::',
-				_0: _user$project$Main$placeholdit(_p8._1),
+				_0: _user$project$Main$rectangle(_p8._0.selection),
+				_1: {ctor: '[]'}
+			};
+		}
+	}();
+	var imageCrop = function () {
+		var _p9 = model;
+		if (_p9.ctor === 'Initializing') {
+			return {
+				ctor: '::',
+				_0: _user$project$Main$placeholdit(_p9._1),
 				_1: {ctor: '[]'}
 			};
 		} else {
-			var _p9 = _p8._0;
+			var _p10 = _p9._0;
 			return {
 				ctor: '::',
-				_0: _user$project$Main$placeholdit(_p9.image),
+				_0: _user$project$Main$placeholdit(_p10.image),
 				_1: {
 					ctor: '::',
 					_0: A2(
 						_elm_lang$html$Html$map,
 						_user$project$Main$ImageCropMsg,
-						_user$project$ImageCrop$view(_p9)),
-					_1: {
-						ctor: '::',
-						_0: _user$project$Main$rectangle(_p9.selection),
-						_1: {ctor: '[]'}
-					}
+						_user$project$ImageCrop$view(_p10)),
+					_1: {ctor: '[]'}
 				}
 			};
 		}
 	}();
+	var imageCropContainer = {
+		ctor: '::',
+		_0: A2(
+			_elm_lang$html$Html$div,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$style(
+					{
+						ctor: '::',
+						_0: {ctor: '_Tuple2', _0: 'position', _1: 'relative'},
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			},
+			imageCrop),
+		_1: {ctor: '[]'}
+	};
 	return A2(
 		_elm_lang$html$Html$div,
 		{
@@ -14611,12 +14574,16 @@ var _user$project$Main$view = function (model) {
 			_0: _elm_lang$html$Html_Attributes$style(
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: 'position', _1: 'relative'},
-					_1: {ctor: '[]'}
+					_0: {ctor: '_Tuple2', _0: 'font-family', _1: 'monospace'},
+					_1: {
+						ctor: '::',
+						_0: {ctor: '_Tuple2', _0: 'padding', _1: '20px'},
+						_1: {ctor: '[]'}
+					}
 				}),
 			_1: {ctor: '[]'}
 		},
-		children);
+		A2(_elm_lang$core$Basics_ops['++'], imageCropContainer, controls));
 };
 var _user$project$Main$main = _elm_lang$html$Html$program(
 	{init: _user$project$Main$init, view: _user$project$Main$view, update: _user$project$Main$update, subscriptions: _user$project$Main$subscriptions})();

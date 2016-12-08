@@ -125,7 +125,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     let
-        children =
+        imageCrop =
             case model of
                 Initializing offset size ->
                     [ placeholdit size ]
@@ -135,15 +135,32 @@ view model =
                     , Html.map
                         ImageCropMsg
                         (ImageCrop.view model)
-                    , rectangle model.selection
                     ]
+
+        controls =
+            case model of
+                Initializing offset size ->
+                    []
+
+                Running model ->
+                    [ rectangle model.selection ]
+
+        imageCropContainer =
+            [ div
+                [ style
+                    [ ( "position", "relative" )
+                    ]
+                ]
+                imageCrop
+            ]
     in
         div
             [ style
-                [ ( "position", "relative" )
+                [ ( "font-family", "monospace" )
+                , ( "padding", "20px" )
                 ]
             ]
-            children
+            (imageCropContainer ++ controls)
 
 
 placeholdit : ImageCrop.Size -> Html Msg

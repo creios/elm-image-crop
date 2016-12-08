@@ -945,38 +945,58 @@ selectionView model cropArea =
                     ]
                     (borders ++ handles)
                 , shadow
-                    [ ( "left", "0" )
-                    , ( "top", "0" )
-                    , ( "width", px (displaySelection.topLeft.x - 1 |> atLeast 0) )
-                    , ( "height", "100%" )
-                    ]
+                    { topLeft =
+                        { x = 0
+                        , y = 0
+                        }
+                    , bottomRight =
+                        { x = displaySelection.topLeft.x - 1 |> atLeast 0
+                        , y = cropArea.height
+                        }
+                    }
                 , shadow
-                    [ ( "right", "0" )
-                    , ( "top", "0" )
-                    , ( "width", px (cropArea.width - displaySelection.bottomRight.x - 1 |> atLeast 0) )
-                    , ( "height", "100%" )
-                    ]
+                    { topLeft =
+                        { x = displaySelection.bottomRight.x + 1 |> atMost cropArea.width
+                        , y = 0
+                        }
+                    , bottomRight =
+                        { x = cropArea.width
+                        , y = cropArea.height
+                        }
+                    }
                 , shadow
-                    [ ( "left", px (displaySelection.topLeft.x - 1) )
-                    , ( "top", "0" )
-                    , ( "width", px ((rectangleSize displaySelection).width + 2) )
-                    , ( "height", px (displaySelection.topLeft.y - 1 |> atLeast 0) )
-                    ]
+                    { topLeft =
+                        { x = displaySelection.topLeft.x - 1 |> atLeast 0
+                        , y = 0
+                        }
+                    , bottomRight =
+                        { x = displaySelection.bottomRight.x + 1 |> atMost cropArea.width
+                        , y = displaySelection.topLeft.y - 1 |> atLeast 0
+                        }
+                    }
                 , shadow
-                    [ ( "left", px (displaySelection.topLeft.x - 1) )
-                    , ( "bottom", "0" )
-                    , ( "width", px ((rectangleSize displaySelection).width + 2) )
-                    , ( "height", px (cropArea.height - displaySelection.bottomRight.y - 1 |> atLeast 0) )
-                    ]
+                    { topLeft =
+                        { x = displaySelection.topLeft.x - 1 |> atLeast 0
+                        , y = displaySelection.bottomRight.y
+                        }
+                    , bottomRight =
+                        { x = displaySelection.bottomRight.x + 1 |> atMost cropArea.width
+                        , y = cropArea.height
+                        }
+                    }
                 ]
 
         Nothing ->
             [ shadow
-                [ ( "left", "0" )
-                , ( "top", "0" )
-                , ( "width", px cropArea.width )
-                , ( "height", px cropArea.height )
-                ]
+                { topLeft =
+                    { x = 0
+                    , y = 0
+                    }
+                , bottomRight =
+                    { x = cropArea.width
+                    , y = cropArea.height
+                    }
+                }
             ]
 
 
@@ -1130,20 +1150,21 @@ handle orientation =
             []
 
 
-shadow : List ( String, String ) -> Html Msg
-shadow positioning =
-    let
-        styles =
+shadow : Rectangle -> Html Msg
+shadow position =
+    div
+        [ style
             [ ( "background-color", "#000000" )
             , ( "opacity", "0.5" )
             , ( "position", "absolute" )
+            , ( "left", px position.topLeft.x )
+            , ( "top", px position.topLeft.y )
+            , ( "width", px (position.bottomRight.x - position.topLeft.x) )
+            , ( "height", px (position.bottomRight.y - position.topLeft.y) )
             ]
-    in
-        div
-            [ style (styles ++ positioning)
-            , onMouseDown SelectStart
-            ]
-            []
+        , onMouseDown SelectStart
+        ]
+        []
 
 
 type Position

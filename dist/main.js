@@ -14356,22 +14356,12 @@ var _user$project$Main$rectangle = function (selection) {
 			_1: {ctor: '[]'}
 		});
 };
-var _user$project$Main$placeholdit = function (size) {
+var _user$project$Main$demoImage = function (size) {
 	return A2(
 		_elm_lang$html$Html$img,
 		{
 			ctor: '::',
-			_0: _elm_lang$html$Html_Attributes$src(
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					'https://placehold.it/',
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						_elm_lang$core$Basics$toString(size.width),
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							'x',
-							_elm_lang$core$Basics$toString(size.height))))),
+			_0: _elm_lang$html$Html_Attributes$src('https://picload.org/image/raooacap/1k5qq4yqm0g-mark-basarab.jpg'),
 			_1: {
 				ctor: '::',
 				_0: _elm_lang$html$Html_Attributes$width(size.width),
@@ -14531,14 +14521,14 @@ var _user$project$Main$view = function (model) {
 		if (_p9.ctor === 'Initializing') {
 			return {
 				ctor: '::',
-				_0: _user$project$Main$placeholdit(_p9._1),
+				_0: _user$project$Main$demoImage(_p9._1),
 				_1: {ctor: '[]'}
 			};
 		} else {
 			var _p10 = _p9._0;
 			return {
 				ctor: '::',
-				_0: _user$project$Main$placeholdit(_p10.image),
+				_0: _user$project$Main$demoImage(_p10.image),
 				_1: {
 					ctor: '::',
 					_0: A2(

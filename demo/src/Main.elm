@@ -128,10 +128,10 @@ view model =
         imageCrop =
             case model of
                 Initializing offset size ->
-                    [ placeholdit size ]
+                    [ demoImage size ]
 
                 Running model ->
-                    [ placeholdit model.image
+                    [ demoImage model.image
                     , Html.map
                         ImageCropMsg
                         (ImageCrop.view model)
@@ -163,10 +163,10 @@ view model =
             (imageCropContainer ++ controls)
 
 
-placeholdit : ImageCrop.Size -> Html Msg
-placeholdit size =
+demoImage : ImageCrop.Size -> Html Msg
+demoImage size =
     img
-        [ src ("https://placehold.it/" ++ toString size.width ++ "x" ++ toString size.height)
+        [ src ("https://picload.org/image/raooacap/1k5qq4yqm0g-mark-basarab.jpg")
         , width size.width
         , height size.height
         , style

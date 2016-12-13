@@ -14313,6 +14313,26 @@ var _user$project$ImageCrop$view = function (model) {
 		A2(_user$project$ImageCrop$selectionView, model, cropArea));
 };
 
+var _user$project$Main$onSelect = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'change',
+		A2(
+			_elm_lang$core$Json_Decode$map,
+			msg,
+			A2(
+				_elm_lang$core$Json_Decode$at,
+				{
+					ctor: '::',
+					_0: 'target',
+					_1: {
+						ctor: '::',
+						_0: 'value',
+						_1: {ctor: '[]'}
+					}
+				},
+				_elm_lang$core$Json_Decode$string)));
+};
 var _user$project$Main$rectangle = function (selection) {
 	var output = function () {
 		var _p0 = selection;
@@ -14395,6 +14415,9 @@ var _user$project$Main$demoImage = function (size) {
 		},
 		{ctor: '[]'});
 };
+var _user$project$Main$labelAttribute = function (text) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'label', text);
+};
 var _user$project$Main$ready = _elm_lang$core$Native_Platform.outgoingPort(
 	'ready',
 	function (v) {
@@ -14425,6 +14448,9 @@ var _user$project$Main$init = {
 	_1: _user$project$Main$ready(
 		{ctor: '_Tuple0'})
 };
+var _user$project$Main$AspectRatioChanged = function (a) {
+	return {ctor: 'AspectRatioChanged', _0: a};
+};
 var _user$project$Main$ViewportChanged = function (a) {
 	return {ctor: 'ViewportChanged', _0: a};
 };
@@ -14434,62 +14460,86 @@ var _user$project$Main$ImageCropMsg = function (a) {
 var _user$project$Main$update = F2(
 	function (msg, model) {
 		var _p2 = msg;
-		if (_p2.ctor === 'ImageCropMsg') {
-			var _p3 = model;
-			if (_p3.ctor === 'Initializing') {
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-			} else {
-				var _p4 = A2(_user$project$ImageCrop$update, _p2._0, _p3._0);
-				var newModel = _p4._0;
-				var newCmd = _p4._1;
-				return {
-					ctor: '_Tuple2',
-					_0: _user$project$Main$Running(newModel),
-					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$ImageCropMsg, newCmd)
-				};
-			}
-		} else {
-			var _p6 = _p2._0;
-			var _p5 = model;
-			if (_p5.ctor === 'Initializing') {
-				return {
-					ctor: '_Tuple2',
-					_0: _user$project$Main$Running(
-						A5(
-							_user$project$ImageCrop$init,
-							_p5._1,
-							_p6,
-							_p5._0,
-							_elm_lang$core$Maybe$Just(
-								{
-									topLeft: {x: 400, y: 200},
-									bottomRight: {x: 610, y: 497}
-								}),
-							_elm_lang$core$Maybe$Nothing)),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			} else {
-				return {
-					ctor: '_Tuple2',
-					_0: _user$project$Main$Running(
-						_elm_lang$core$Native_Utils.update(
-							_p5._0,
-							{cropAreaWidth: _p6})),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			}
+		switch (_p2.ctor) {
+			case 'ImageCropMsg':
+				var _p3 = model;
+				if (_p3.ctor === 'Initializing') {
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				} else {
+					var _p4 = A2(_user$project$ImageCrop$update, _p2._0, _p3._0);
+					var newModel = _p4._0;
+					var newCmd = _p4._1;
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$Main$Running(newModel),
+						_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$ImageCropMsg, newCmd)
+					};
+				}
+			case 'ViewportChanged':
+				var _p6 = _p2._0;
+				var _p5 = model;
+				if (_p5.ctor === 'Initializing') {
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$Main$Running(
+							A5(
+								_user$project$ImageCrop$init,
+								_p5._1,
+								_p6,
+								_p5._0,
+								_elm_lang$core$Maybe$Just(
+									{
+										topLeft: {x: 400, y: 200},
+										bottomRight: {x: 610, y: 497}
+									}),
+								_elm_lang$core$Maybe$Nothing)),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				} else {
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$Main$Running(
+							_elm_lang$core$Native_Utils.update(
+								_p5._0,
+								{cropAreaWidth: _p6})),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				}
+			default:
+				var _p8 = _p2._0;
+				var _p7 = model;
+				if (_p7.ctor === 'Initializing') {
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				} else {
+					var aspectRatio = _elm_lang$core$Native_Utils.eq(_p8, 'free') ? _elm_lang$core$Maybe$Nothing : (_elm_lang$core$Native_Utils.eq(_p8, 'square') ? _elm_lang$core$Maybe$Just(
+						{width: 1, height: 1}) : (_elm_lang$core$Native_Utils.eq(_p8, 'din-landscape') ? _elm_lang$core$Maybe$Just(
+						{
+							width: _elm_lang$core$Basics$sqrt(2),
+							height: 1
+						}) : (_elm_lang$core$Native_Utils.eq(_p8, 'din-portrait') ? _elm_lang$core$Maybe$Just(
+						{
+							width: 1,
+							height: _elm_lang$core$Basics$sqrt(2)
+						}) : _elm_lang$core$Maybe$Nothing)));
+					var newModel = A2(_user$project$ImageCrop$changeAspectRatio, aspectRatio, _p7._0);
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$Main$Running(newModel),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				}
 		}
 	});
 var _user$project$Main$subscriptions = function (model) {
 	var imageCropSubs = function () {
-		var _p7 = model;
-		if (_p7.ctor === 'Initializing') {
+		var _p9 = model;
+		if (_p9.ctor === 'Initializing') {
 			return _elm_lang$core$Platform_Sub$none;
 		} else {
 			return A2(
 				_elm_lang$core$Platform_Sub$map,
 				_user$project$Main$ImageCropMsg,
-				_user$project$ImageCrop$subscriptions(_p7._0));
+				_user$project$ImageCrop$subscriptions(_p9._0));
 		}
 	}();
 	return _elm_lang$core$Platform_Sub$batch(
@@ -14505,36 +14555,144 @@ var _user$project$Main$subscriptions = function (model) {
 };
 var _user$project$Main$view = function (model) {
 	var controls = function () {
-		var _p8 = model;
-		if (_p8.ctor === 'Initializing') {
+		var _p10 = model;
+		if (_p10.ctor === 'Initializing') {
 			return {ctor: '[]'};
 		} else {
 			return {
 				ctor: '::',
-				_0: _user$project$Main$rectangle(_p8._0.selection),
-				_1: {ctor: '[]'}
+				_0: _user$project$Main$rectangle(_p10._0.selection),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$label,
+						{ctor: '[]'},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text('Aspect Ratio '),
+							_1: {
+								ctor: '::',
+								_0: A2(
+									_elm_lang$html$Html$select,
+									{
+										ctor: '::',
+										_0: _user$project$Main$onSelect(_user$project$Main$AspectRatioChanged),
+										_1: {ctor: '[]'}
+									},
+									{
+										ctor: '::',
+										_0: A2(
+											_elm_lang$html$Html$option,
+											{
+												ctor: '::',
+												_0: _elm_lang$html$Html_Attributes$value('free'),
+												_1: {
+													ctor: '::',
+													_0: _elm_lang$html$Html_Attributes$selected(true),
+													_1: {ctor: '[]'}
+												}
+											},
+											{
+												ctor: '::',
+												_0: _elm_lang$html$Html$text('Free'),
+												_1: {ctor: '[]'}
+											}),
+										_1: {
+											ctor: '::',
+											_0: A2(
+												_elm_lang$html$Html$option,
+												{
+													ctor: '::',
+													_0: _elm_lang$html$Html_Attributes$value('square'),
+													_1: {ctor: '[]'}
+												},
+												{
+													ctor: '::',
+													_0: _elm_lang$html$Html$text('Square'),
+													_1: {ctor: '[]'}
+												}),
+											_1: {
+												ctor: '::',
+												_0: A2(
+													_elm_lang$html$Html$optgroup,
+													{
+														ctor: '::',
+														_0: _user$project$Main$labelAttribute('Landscape'),
+														_1: {ctor: '[]'}
+													},
+													{
+														ctor: '::',
+														_0: A2(
+															_elm_lang$html$Html$option,
+															{
+																ctor: '::',
+																_0: _elm_lang$html$Html_Attributes$value('din-landscape'),
+																_1: {ctor: '[]'}
+															},
+															{
+																ctor: '::',
+																_0: _elm_lang$html$Html$text('DIN'),
+																_1: {ctor: '[]'}
+															}),
+														_1: {ctor: '[]'}
+													}),
+												_1: {
+													ctor: '::',
+													_0: A2(
+														_elm_lang$html$Html$optgroup,
+														{
+															ctor: '::',
+															_0: _user$project$Main$labelAttribute('Potrait'),
+															_1: {ctor: '[]'}
+														},
+														{
+															ctor: '::',
+															_0: A2(
+																_elm_lang$html$Html$option,
+																{
+																	ctor: '::',
+																	_0: _elm_lang$html$Html_Attributes$value('din-portrait'),
+																	_1: {ctor: '[]'}
+																},
+																{
+																	ctor: '::',
+																	_0: _elm_lang$html$Html$text('DIN'),
+																	_1: {ctor: '[]'}
+																}),
+															_1: {ctor: '[]'}
+														}),
+													_1: {ctor: '[]'}
+												}
+											}
+										}
+									}),
+								_1: {ctor: '[]'}
+							}
+						}),
+					_1: {ctor: '[]'}
+				}
 			};
 		}
 	}();
 	var imageCrop = function () {
-		var _p9 = model;
-		if (_p9.ctor === 'Initializing') {
+		var _p11 = model;
+		if (_p11.ctor === 'Initializing') {
 			return {
 				ctor: '::',
-				_0: _user$project$Main$demoImage(_p9._1),
+				_0: _user$project$Main$demoImage(_p11._1),
 				_1: {ctor: '[]'}
 			};
 		} else {
-			var _p10 = _p9._0;
+			var _p12 = _p11._0;
 			return {
 				ctor: '::',
-				_0: _user$project$Main$demoImage(_p10.image),
+				_0: _user$project$Main$demoImage(_p12.image),
 				_1: {
 					ctor: '::',
 					_0: A2(
 						_elm_lang$html$Html$map,
 						_user$project$Main$ImageCropMsg,
-						_user$project$ImageCrop$view(_p10)),
+						_user$project$ImageCrop$view(_p12)),
 					_1: {ctor: '[]'}
 				}
 			};
@@ -14581,7 +14739,7 @@ var _user$project$Main$main = _elm_lang$html$Html$program(
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
 if (typeof _user$project$Main$main !== 'undefined') {
-    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"ImageCrop.Direction":{"args":[],"tags":{"North":[],"South":[],"SouthEast":[],"NorthEast":[],"NorthWest":[],"West":[],"SouthWest":[],"East":[]}},"Main.Msg":{"args":[],"tags":{"ImageCropMsg":["ImageCrop.Msg"],"ViewportChanged":["Int"]}},"ImageCrop.Msg":{"args":[],"tags":{"SelectEnd":["Mouse.Position"],"ResizeAt":["Mouse.Position"],"ResizeStart":["ImageCrop.Direction","ImageCrop.MouseButtonEvent"],"MoveEnd":["Mouse.Position"],"MoveStart":["ImageCrop.MouseButtonEvent"],"MoveAt":["Mouse.Position"],"SelectAt":["Mouse.Position"],"ResizeEnd":["Mouse.Position"],"SelectStart":["ImageCrop.MouseButtonEvent"]}}},"aliases":{"Mouse.Position":{"args":[],"type":"{ x : Int, y : Int }"},"ImageCrop.MouseButtonEvent":{"args":[],"type":"{ position : Mouse.Position, button : Int }"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
+    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"ImageCrop.Direction":{"args":[],"tags":{"North":[],"South":[],"SouthEast":[],"NorthEast":[],"NorthWest":[],"West":[],"SouthWest":[],"East":[]}},"Main.Msg":{"args":[],"tags":{"ImageCropMsg":["ImageCrop.Msg"],"AspectRatioChanged":["String"],"ViewportChanged":["Int"]}},"ImageCrop.Msg":{"args":[],"tags":{"SelectEnd":["Mouse.Position"],"ResizeAt":["Mouse.Position"],"ResizeStart":["ImageCrop.Direction","ImageCrop.MouseButtonEvent"],"MoveEnd":["Mouse.Position"],"MoveStart":["ImageCrop.MouseButtonEvent"],"MoveAt":["Mouse.Position"],"SelectAt":["Mouse.Position"],"ResizeEnd":["Mouse.Position"],"SelectStart":["ImageCrop.MouseButtonEvent"]}}},"aliases":{"Mouse.Position":{"args":[],"type":"{ x : Int, y : Int }"},"ImageCrop.MouseButtonEvent":{"args":[],"type":"{ position : Mouse.Position, button : Int }"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
 }
 
 if (typeof define === "function" && define['amd'])

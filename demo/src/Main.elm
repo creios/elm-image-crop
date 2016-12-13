@@ -1,11 +1,12 @@
 port module Main exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (style, src, width, height, value, type_, id)
-import Html.Events exposing (onInput)
+import Html.Attributes exposing (style, src, width, height, value, type_, id, selected, attribute)
+import Html.Events exposing (onInput, on)
 import ImageCrop
 import Platform.Cmd
 import String exposing (toInt)
+import Json.Decode as Json
 
 
 main : Program Never Model Msg
@@ -44,13 +45,13 @@ init =
     ( Initializing { x = 20, y = 20 } { width = 1800, height = 1200 }, ready () )
 
 
-
 -- Update
 
 
 type Msg
     = ImageCropMsg ImageCrop.Msg
     | ViewportChanged Int
+    | AspectRatioChanged String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -95,6 +96,30 @@ update msg model =
 
                 Running model ->
                     ( Running { model | cropAreaWidth = width }, Cmd.none )
+
+        AspectRatioChanged key ->
+            case model of
+                Initializing offset size ->
+                    ( model, Cmd.none )
+
+                Running model ->
+                    let
+                        aspectRatio =
+                            if key == "free" then
+                                Nothing
+                            else if key == "square" then
+                                Just { width = 1, height = 1 }
+                            else if key == "din-landscape" then
+                                Just { width = sqrt 2, height = 1 }
+                            else if key == "din-portrait" then
+                                Just { width = 1, height = sqrt 2 }
+                            else
+                                Nothing
+
+                        newModel =
+                            ImageCrop.changeAspectRatio aspectRatio model
+                    in
+                        ( Running newModel, Cmd.none )
 
 
 
@@ -143,7 +168,33 @@ view model =
                     []
 
                 Running model ->
-                    [ rectangle model.selection ]
+                    [ rectangle model.selection
+                    , label
+                        []
+                        [ text "Aspect Ratio "
+                        , select
+                            [ onSelect AspectRatioChanged ]
+                            [ option
+                                [ value "free", selected True ]
+                                [ text "Free" ]
+                            , option
+                                [ value "square" ]
+                                [ text "Square" ]
+                            , optgroup
+                                [ labelAttribute "Landscape" ]
+                                [ option
+                                    [ value "din-landscape" ]
+                                    [ text "DIN" ]
+                                ]
+                            , optgroup
+                                [ labelAttribute "Potrait" ]
+                                [ option
+                                    [ value "din-portrait" ]
+                                    [ text "DIN" ]
+                                ]
+                            ]
+                        ]
+                    ]
 
         imageCropContainer =
             [ div
@@ -161,6 +212,10 @@ view model =
                 ]
             ]
             (imageCropContainer ++ controls)
+
+
+labelAttribute text =
+    attribute "label" text
 
 
 demoImage : ImageCrop.Size -> Html Msg
@@ -191,6 +246,11 @@ rectangle selection =
                     "No selection"
     in
         p [] [ text output ]
+
+
+onSelect : (String -> msg) -> Html.Attribute msg
+onSelect msg =
+    on "change" (Json.map msg (Json.at [ "target", "value" ] Json.string))
 
 
 port ready : () -> Cmd msg

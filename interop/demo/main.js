@@ -14,7 +14,8 @@ window.addEventListener('load', function () {
         topLeftX = document.getElementById('top-left-x'),
         topLeftY = document.getElementById('top-left-y'),
         bottomRightX = document.getElementById('bottom-right-x'),
-        bottomRightY = document.getElementById('bottom-right-y');
+        bottomRightY = document.getElementById('bottom-right-y'),
+        aspectRatioInput = document.getElementById('aspect-ratio-input');
     app.ports.selectionChanged.subscribe(function (selection) {
         if (selection !== null) {
             topLeftX.innerHTML = selection.topLeft.x;
@@ -34,4 +35,15 @@ window.addEventListener('load', function () {
     function getImageWidth() {
         return Math.round(+getComputedStyle(image).width.replace('px', ''));
     }
+    aspectRatioInput.addEventListener('change', function (event) {
+        var
+            aspectRatios = {
+                'free': null,
+                'square': {width: 1, height: 1},
+                'din-landscape': {width: Math.sqrt(2), height: 1},
+                'din-portrait': {width: 1, height: Math.sqrt(2)}
+            },
+            aspectRatio = aspectRatios[event.target.value];
+        app.ports.changeAspectRatio.send(aspectRatio);
+    });
 });

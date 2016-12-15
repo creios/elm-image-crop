@@ -10,7 +10,7 @@ window.addEventListener('load', function () {
     var app = Elm.Main.fullscreen();
     function updateViewport() {
         var image = document.getElementById('image');
-        var width = +getComputedStyle(image).width.replace('px', '');
+        var width = Math.round(+getComputedStyle(image).width.replace('px', ''));
         app.ports.viewportChanged.send(width);
     }
     window.addEventListener('resize', updateViewport);

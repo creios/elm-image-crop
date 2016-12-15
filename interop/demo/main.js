@@ -32,6 +32,6 @@ window.addEventListener('load', function () {
         app.ports.viewportChanged.send(getImageWidth());
     });
     function getImageWidth() {
-        return +getComputedStyle(image).width.replace('px', '');
+        return Math.round(+getComputedStyle(image).width.replace('px', ''));
     }
 });

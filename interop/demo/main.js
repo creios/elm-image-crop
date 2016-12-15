@@ -2,14 +2,15 @@ window.addEventListener('load', function () {
     var image = document.getElementById('image');
     var node = document.getElementById('main');
     var app = Elm.ImageCrop.Interop.embed(node, {
-        image: {width: 900, height: 600},
+        image: {width: 1800, height: 1200},
         cropAreaWidth: getImageWidth(),
-        offset: {x: 8, y: 8},
+        offset: {x: 20, y: 20},
         selection: {topLeft: {x: 0, y: 0}, bottomRight: {x: 100, y: 100}},
         aspectRatio: null
     });
     var
-        coordinatesDiv = document.getElementById('coordinates'),
+        coordinates = document.getElementById('coordinates'),
+        noSelection = document.getElementById('no-selection'),
         topLeftX = document.getElementById('top-left-x'),
         topLeftY = document.getElementById('top-left-y'),
         bottomRightX = document.getElementById('bottom-right-x'),
@@ -20,34 +21,17 @@ window.addEventListener('load', function () {
             topLeftY.innerHTML = selection.topLeft.y;
             bottomRightX.innerHTML = selection.bottomRight.x;
             bottomRightY.innerHTML = selection.bottomRight.y;
-            coordinatesDiv.style.display = 'block';
+            coordinates.style.display = 'block';
+            noSelection.style.display = 'none';
         } else {
-            coordinatesDiv.style.display = 'none';
+            coordinates.style.display = 'none';
+            noSelection.style.display = 'block';
         }
     });
-    //var resizeDetector = document.getElementById('resize-detector');
-    //resizeDetector.addEventListener('load', function () {
-    //    resizeDetector
-    //        .contentDocument
-    //        .defaultView
-    //        .addEventListener('resize', function () {
-    //            app.ports.viewportChanged.send(getImageWidth());
-    //        });
-    //});
     window.addEventListener('resize', function () {
         app.ports.viewportChanged.send(getImageWidth());
     });
     function getImageWidth() {
         return +getComputedStyle(image).width.replace('px', '');
     }
-    document
-        .getElementById('aspect-ratio-form')
-        .addEventListener('submit', function (event) {
-            event.preventDefault();
-            var aspectRatio = {
-                width: +document.getElementById('aspect-ratio-width-input').value,
-                height: +document.getElementById('aspect-ratio-height-input').value,
-            };
-            app.ports.changeAspectRatio.send(aspectRatio);
-        });
 });

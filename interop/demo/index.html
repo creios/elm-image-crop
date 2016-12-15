@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/> 
+        <script src="image-crop.interop.js"></script>
+        <script src="main.js"></script>
+        <title>Javscript Interop Demo</title>
+    </head>
+    <body style="margin: 0; padding: 20px; font-family: monospace;">
+        <div style="position: relative">
+            <img src="https://picload.org/image/raooacap/1k5qq4yqm0g-mark-basarab.jpg" width="1800" height="1200" style="width: 900px; max-width: 100%; height: auto;" id="image">
+            <div id="main"></div>
+        </div>
+        <p id="coordinates">
+            (<span id="top-left-x">0</span>|<span id="top-left-y">0</span>),
+            (<span id="bottom-right-x">100</span>|<span id="bottom-right-y">100</span>)
+        </p>
+        <p id="no-selection" style="display: none;">No selection</p>
+        <label>
+            Aspect Ratio
+            <select id="aspect-ratio-input">
+                <option value="free">Free</option>
+                <option value="square">Square</option>
+                <optgroup label="Landscape">
+                    <option value="din-landscape">DIN</option>
+                </optgroup>
+                <optgroup label="Potrait">
+                    <option value="din-portrait">DIN</option>
+                </optgroup>
+            </select>
+        </label>
+    </body>
+</html>

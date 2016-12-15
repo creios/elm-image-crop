@@ -1,3 +1,4 @@
 elm-stuff
-/dist
-/node_modules
+node_modules
+/interop/dist
+/interop/demo/image-crop.interop.js

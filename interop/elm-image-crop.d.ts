@@ -22,7 +22,6 @@ declare namespace ElmImageCrop {
     export interface Flags {
         image: Size;
         cropAreaWidth: number;
-        offset: Point;
         selection: Rectangle | null;
         aspectRatio: Size | null;
     }
@@ -50,6 +49,8 @@ declare namespace ElmImageCrop {
         viewportChanged: ViewportChanged;
         selectionChanged: SelectionChanged;
         changeAspectRatio: ChangeAspectRatio;
+        requestOffset: RequestOffset;
+        receiveOffset: ReceiveOffset;
     }
   
     export interface ViewportChanged {
@@ -62,5 +63,13 @@ declare namespace ElmImageCrop {
   
     export interface ChangeAspectRatio {
         send(aspectRatio: Size | null): void;
+    }
+
+    export interface RequestOffset {
+        subscribe(callback: () => void): void;
+    }
+
+    export interface ReceiveOffset {
+        send(offset: Point): void
     }
 }

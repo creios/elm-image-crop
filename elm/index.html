@@ -18,7 +18,10 @@ window.addEventListener('load', function () {
     app.ports.requestOffset.subscribe(function () {
         var image = document.getElementById('image'),
             rect = image.getBoundingClientRect();
-        app.ports.receiveOffset.send({x: rect.left, y: rect.top});
+        app.ports.receiveOffset.send({
+            x: Math.round(rect.left + window.pageXOffset),
+            y: Math.round(rect.top + window.pageYOffset)
+        });
     });
 });
         </script>

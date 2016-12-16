@@ -36,7 +36,10 @@ window.addEventListener('load', function () {
     }
     app.ports.requestOffset.subscribe(function () {
         var rect = image.getBoundingClientRect();
-        app.ports.receiveOffset.send({x: rect.left, y: rect.top});
+        app.ports.receiveOffset.send({
+            x: Math.round(rect.left + window.pageXOffset),
+            y: Math.round(rect.top + window.pageYOffset)
+        });
     });
     aspectRatioInput.addEventListener('change', function (event) {
         var

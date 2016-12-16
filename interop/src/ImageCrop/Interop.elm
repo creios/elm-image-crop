@@ -7,21 +7,21 @@ import ImageCrop
 type alias Flags =
     { image : ImageCrop.Size
     , cropAreaWidth : Int
-    , offset : ImageCrop.Point
     , selection : Maybe ImageCrop.Rectangle
     , aspectRatio : Maybe ImageCrop.AspectRatio
     }
 
 
 init : Flags -> ( ImageCrop.Model, Cmd Msg )
-init { image, cropAreaWidth, offset, selection, aspectRatio } =
-    ( ImageCrop.init image cropAreaWidth offset selection aspectRatio
+init { image, cropAreaWidth, selection, aspectRatio } =
+    ( ImageCrop.init image cropAreaWidth selection aspectRatio
     , Cmd.none
     )
 
 
 type Msg
     = ViewportChanged Int
+    | ReceiveOffset ImageCrop.Point
     | ChangeAspectRatio (Maybe ImageCrop.AspectRatio)
     | ImageCropMsg ImageCrop.Msg
 
@@ -38,19 +38,35 @@ main =
 
 update : Msg -> ImageCrop.Model -> ( ImageCrop.Model, Cmd Msg )
 update msg model =
-    let
-        newModel =
-            case msg of
-                ViewportChanged width ->
-                    { model | cropAreaWidth = width }
+    case msg of
+        ViewportChanged width ->
+            ( { model | cropAreaWidth = width }, Cmd.none )
 
-                ChangeAspectRatio aspectRatio ->
-                    ImageCrop.changeAspectRatio aspectRatio model
+        ReceiveOffset offset ->
+            ( ImageCrop.receiveOffset offset model, Cmd.none )
 
-                ImageCropMsg msg ->
-                    Tuple.first (ImageCrop.update msg model)
-    in
-        ( newModel, selectionChanged newModel.selection )
+        ChangeAspectRatio aspectRatio ->
+            ( ImageCrop.changeAspectRatio aspectRatio model, Cmd.none )
+
+        ImageCropMsg msg ->
+            let
+                ( newModel, newCmd, notification ) =
+                    ImageCrop.update msg model
+
+                interopCmd =
+                    case notification of
+                        ImageCrop.RequestOffset ->
+                            requestOffset ()
+
+                        ImageCrop.SelectionChanged selection ->
+                            selectionChanged selection
+
+                        _ ->
+                            Cmd.none
+            in
+                ( newModel
+                , Cmd.batch [ Cmd.map ImageCropMsg newCmd, interopCmd ]
+                )
 
 
 view : ImageCrop.Model -> Html Msg
@@ -66,6 +82,7 @@ subscriptions model =
     in
         Sub.batch
             [ viewportChanged ViewportChanged
+            , receiveOffset ReceiveOffset
             , changeAspectRatio ChangeAspectRatio
             , imageCropSubs
             ]
@@ -78,3 +95,9 @@ port viewportChanged : (Int -> msg) -> Sub msg
 
 
 port changeAspectRatio : (Maybe ImageCrop.AspectRatio -> msg) -> Sub msg
+
+
+port requestOffset : () -> Cmd msg
+
+
+port receiveOffset : (ImageCrop.Point -> msg) -> Sub msg

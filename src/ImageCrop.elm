@@ -6,11 +6,13 @@ module ImageCrop
         , Rectangle
         , AspectRatio
         , Msg
+        , Notification(..)
         , init
         , update
         , view
         , subscriptions
         , changeAspectRatio
+        , receiveOffset
         )
 
 import Html exposing (..)
@@ -26,13 +28,18 @@ import Json.Decode as Json exposing (field)
 type alias Model =
     { image : Size
     , cropAreaWidth : Int
-    , offset : Point
     , selection : Maybe Rectangle
     , aspectRatio : Maybe AspectRatio
-    , move : Maybe Move
-    , resize : Maybe Resize
-    , select : Maybe Select
+    , action : Action
     }
+
+
+type Action
+    = NoAction
+    | Move MoveData
+    | Resize ResizeData
+    | WaitingForOffset WaitingForOffsetData
+    | Select SelectData
 
 
 type alias Point =
@@ -59,21 +66,27 @@ type alias Movement =
     }
 
 
-type alias Move =
+type alias MoveData =
     { start : Mouse.Position
     , originalSelection : Rectangle
     }
 
 
-type alias Resize =
+type alias ResizeData =
     { direction : Direction
     , start : Mouse.Position
     , originalSelection : Rectangle
     }
 
 
-type alias Select =
+type alias WaitingForOffsetData =
     { start : Mouse.Position
+    }
+
+
+type alias SelectData =
+    { start : Mouse.Position
+    , offset : Point
     }
 
 
@@ -83,16 +96,13 @@ type alias AspectRatio =
     }
 
 
-init : Size -> Int -> Point -> Maybe Rectangle -> Maybe AspectRatio -> Model
-init image cropAreaWidth offset selection aspectRatio =
+init : Size -> Int -> Maybe Rectangle -> Maybe AspectRatio -> Model
+init image cropAreaWidth selection aspectRatio =
     { image = image
     , cropAreaWidth = cropAreaWidth
-    , offset = offset
     , selection = selection
     , aspectRatio = aspectRatio
-    , move = Nothing
-    , resize = Nothing
-    , select = Nothing
+    , action = NoAction
     }
 
 
@@ -112,12 +122,22 @@ type Msg
     | SelectEnd Mouse.Position
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+type Notification
+    = NoNotification
+    | SelectionChanged (Maybe Rectangle)
+    | RequestOffset
+
+
+update : Msg -> Model -> ( Model, Cmd Msg, Notification )
 update msg model =
-    ( updateHelper msg model, Cmd.none )
+    let
+        ( newModel, notification ) =
+            updateHelper msg model
+    in
+        ( newModel, Cmd.none, notification )
 
 
-updateHelper : Msg -> Model -> Model
+updateHelper : Msg -> Model -> ( Model, Notification )
 updateHelper msg model =
     case msg of
         MoveStart event ->
@@ -130,27 +150,27 @@ updateHelper msg model =
                                 , originalSelection = selection
                                 }
                         in
-                            { model | move = Just move }
+                            ( { model | action = Move move }, NoNotification )
 
                     Nothing ->
-                        model
+                        ( model, NoNotification )
             else
-                model
+                ( model, NoNotification )
 
         MoveAt xy ->
-            case model.move of
-                Just move ->
+            case model.action of
+                Move move ->
                     let
                         selection =
-                            moveSelection model.image model.cropAreaWidth move xy
+                            Just (moveSelection model.image model.cropAreaWidth move xy)
                     in
-                        { model | selection = Just selection }
+                        ( { model | selection = selection }, SelectionChanged selection )
 
-                Nothing ->
-                    model
+                _ ->
+                    ( model, NoNotification )
 
         MoveEnd _ ->
-            { model | move = Nothing }
+            ( { model | action = NoAction }, NoNotification )
 
         ResizeStart direction event ->
             if event.button == 0 then
@@ -163,52 +183,52 @@ updateHelper msg model =
                                 , originalSelection = selection
                                 }
                         in
-                            { model | resize = Just resize }
+                            ( { model | action = Resize resize }, NoNotification )
 
                     Nothing ->
-                        model
+                        ( model, NoNotification )
             else
-                model
+                ( model, NoNotification )
 
         ResizeAt xy ->
-            case model.resize of
-                Just resize ->
+            case model.action of
+                Resize resize ->
                     let
                         selection =
-                            resizeSelection model resize xy
+                            Just (resizeSelection model resize xy)
                     in
-                        { model | selection = Just selection }
+                        ( { model | selection = selection }, SelectionChanged selection )
 
-                Nothing ->
-                    model
+                _ ->
+                    ( model, NoNotification )
 
         ResizeEnd _ ->
-            { model | resize = Nothing }
+            ( { model | action = NoAction }, NoNotification )
 
         SelectStart event ->
             if event.button == 0 then
                 let
-                    select =
-                        Just { start = event.position }
+                    action =
+                        WaitingForOffset { start = event.position }
                 in
-                    { model | selection = Nothing, select = select }
+                    ( { model | selection = Nothing, action = action }, RequestOffset )
             else
-                model
+                ( model, NoNotification )
 
         SelectAt xy ->
-            case model.select of
-                Just select ->
+            case model.action of
+                Select select ->
                     let
                         selection =
                             createSelection select model xy
                     in
-                        { model | selection = selection }
+                        ( { model | selection = selection }, SelectionChanged selection )
 
-                Nothing ->
-                    model
+                _ ->
+                    ( model, NoNotification )
 
         SelectEnd _ ->
-            { model | select = Nothing }
+            ( { model | action = NoAction }, NoNotification )
 
 
 atLeast : comparable -> comparable -> comparable
@@ -221,7 +241,7 @@ atMost =
     min
 
 
-moveSelection : Size -> Int -> Move -> Mouse.Position -> Rectangle
+moveSelection : Size -> Int -> MoveData -> Mouse.Position -> Rectangle
 moveSelection image cropAreaWidth move current =
     let
         selection =
@@ -282,15 +302,15 @@ normalizeEdges canvas first second =
         }
 
 
-resizeSelection : Model -> Resize -> Mouse.Position -> Rectangle
+resizeSelection : Model -> ResizeData -> Mouse.Position -> Rectangle
 resizeSelection model resize position =
     let
         { topLeft, bottomRight } =
             resize.originalSelection
 
-        relativeCoordinates point =
-            { x = point.x - model.offset.x
-            , y = point.y - model.offset.y
+        movement =
+            { horizontal = position.x - resize.start.x
+            , vertical = position.y - resize.start.y
             }
 
         factor =
@@ -299,13 +319,37 @@ resizeSelection model resize position =
         scale value =
             round (toFloat value * factor)
 
-        scalePoint point =
-            { x = scale point.x
-            , y = scale point.y
+        scaleMovement movement =
+            { horizontal = scale movement.horizontal
+            , vertical = scale movement.vertical
+            }
+
+        normalizedMovement =
+            scaleMovement movement
+
+        startingPointX =
+            if List.member resize.direction [ NorthWest, West, SouthWest ] then
+                resize.originalSelection.topLeft.x
+            else if List.member resize.direction [ NorthEast, East, SouthEast ] then
+                resize.originalSelection.bottomRight.x
+            else
+                round (toFloat (resize.originalSelection.bottomRight.x - resize.originalSelection.topLeft.x) / 2)
+
+        startingPointY =
+            if List.member resize.direction [ NorthWest, North, NorthEast ] then
+                resize.originalSelection.topLeft.y
+            else if List.member resize.direction [ SouthWest, South, SouthEast ] then
+                resize.originalSelection.bottomRight.y
+            else
+                round (toFloat (resize.originalSelection.bottomRight.y - resize.originalSelection.topLeft.y) / 2)
+
+        startingPoint =
+            { x = startingPointX
+            , y = startingPointY
             }
 
         normalizedPosition =
-            scalePoint (relativeCoordinates position)
+            movePoint normalizedMovement startingPoint
     in
         case model.aspectRatio of
             Just aspectRatio ->
@@ -399,7 +443,7 @@ createAspectRatioSelection image aspectRatio generalDirection anchor position =
             edgeConstraints
 
 
-calculateAnchor : Resize -> Point
+calculateAnchor : ResizeData -> Point
 calculateAnchor { direction, originalSelection } =
     let
         { topLeft, bottomRight } =
@@ -748,15 +792,15 @@ rectangleSize { topLeft, bottomRight } =
     }
 
 
-createSelection : Select -> Model -> Mouse.Position -> Maybe Rectangle
+createSelection : SelectData -> Model -> Mouse.Position -> Maybe Rectangle
 createSelection select model position =
     if select.start == position then
         Nothing
     else
         let
             relativeCoordinates point =
-                { x = point.x - model.offset.x
-                , y = point.y - model.offset.y
+                { x = point.x - select.offset.x
+                , y = point.y - select.offset.y
                 }
 
             factor =
@@ -829,6 +873,20 @@ changeAspectRatio maybeAspectRatio model =
         { selectionUpdated | aspectRatio = maybeAspectRatio }
 
 
+receiveOffset : Point -> Model -> Model
+receiveOffset offset model =
+    case model.action of
+        WaitingForOffset { start } ->
+            let
+                action =
+                    Select { start = start, offset = offset }
+            in
+                { model | action = action }
+
+        _ ->
+            model
+
+
 recalculateSelection : Size -> AspectRatio -> Rectangle -> Rectangle
 recalculateSelection image aspectRatio selection =
     let
@@ -873,31 +931,21 @@ rectangleArea rectangle =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     let
-        moveSubscriptions =
-            case model.move of
-                Just _ ->
+        subscriptions =
+            case model.action of
+                Move _ ->
                     [ Mouse.moves MoveAt, Mouse.ups MoveEnd ]
 
-                Nothing ->
-                    []
-
-        resizeSubscriptions =
-            case model.resize of
-                Just _ ->
+                Resize _ ->
                     [ Mouse.moves ResizeAt, Mouse.ups ResizeEnd ]
 
-                Nothing ->
-                    []
-
-        selectSubscriptions =
-            case model.select of
-                Just _ ->
+                Select _ ->
                     [ Mouse.moves SelectAt, Mouse.ups SelectEnd ]
 
-                Nothing ->
+                _ ->
                     []
     in
-        Sub.batch (moveSubscriptions ++ resizeSubscriptions ++ selectSubscriptions)
+        Sub.batch subscriptions
 
 
 

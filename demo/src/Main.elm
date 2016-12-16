@@ -4,7 +4,6 @@ import Html exposing (..)
 import Html.Attributes exposing (style, src, width, height, value, type_, id, selected, attribute)
 import Html.Events exposing (onInput, on)
 import ImageCrop
-import Platform.Cmd
 import String exposing (toInt)
 import Json.Decode as Json
 
@@ -24,13 +23,12 @@ main =
 
 
 type Model
-    = Initializing ImageCrop.Point ImageCrop.Size
+    = Initializing ImageCrop.Size
     | Running ImageCrop.Model
 
 
 type alias Viewport =
     { width : Int
-    , offset : ImageCrop.Point
     }
 
 
@@ -42,7 +40,8 @@ type alias Size =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Initializing { x = 20, y = 20 } { width = 1800, height = 1200 }, ready () )
+    ( Initializing { width = 1800, height = 1200 }, ready () )
+
 
 
 -- Update
@@ -51,6 +50,7 @@ init =
 type Msg
     = ImageCropMsg ImageCrop.Msg
     | ViewportChanged Int
+    | ReceiveOffset ImageCrop.Point
     | AspectRatioChanged String
 
 
@@ -59,26 +59,33 @@ update msg model =
     case msg of
         ImageCropMsg msg ->
             case model of
-                Initializing offset size ->
+                Initializing size ->
                     ( model, Cmd.none )
 
                 Running model ->
                     let
-                        ( newModel, newCmd ) =
+                        ( newModel, newCmd, notification ) =
                             ImageCrop.update msg model
+
+                        appCmd =
+                            case notification of
+                                ImageCrop.RequestOffset ->
+                                    requestOffset ()
+
+                                _ ->
+                                    Cmd.none
                     in
                         ( Running newModel
-                        , Platform.Cmd.map ImageCropMsg newCmd
+                        , Cmd.batch [ Cmd.map ImageCropMsg newCmd, appCmd ]
                         )
 
         ViewportChanged width ->
             case model of
-                Initializing offset size ->
+                Initializing size ->
                     ( Running <|
                         ImageCrop.init
                             size
                             width
-                            offset
                             (Just
                                 { topLeft =
                                     { x = 400
@@ -97,9 +104,17 @@ update msg model =
                 Running model ->
                     ( Running { model | cropAreaWidth = width }, Cmd.none )
 
+        ReceiveOffset offset ->
+            case model of
+                Initializing size ->
+                    ( model, Cmd.none )
+
+                Running model ->
+                    ( Running (ImageCrop.receiveOffset offset model), Cmd.none )
+
         AspectRatioChanged key ->
             case model of
-                Initializing offset size ->
+                Initializing size ->
                     ( model, Cmd.none )
 
                 Running model ->
@@ -131,7 +146,7 @@ subscriptions model =
     let
         imageCropSubs =
             case model of
-                Initializing offset size ->
+                Initializing size ->
                     Sub.none
 
                 Running model ->
@@ -139,6 +154,7 @@ subscriptions model =
     in
         Sub.batch
             [ viewportChanged ViewportChanged
+            , receiveOffset ReceiveOffset
             , imageCropSubs
             ]
 
@@ -152,7 +168,7 @@ view model =
     let
         imageCrop =
             case model of
-                Initializing offset size ->
+                Initializing size ->
                     [ demoImage size ]
 
                 Running model ->
@@ -164,7 +180,7 @@ view model =
 
         controls =
             case model of
-                Initializing offset size ->
+                Initializing size ->
                     []
 
                 Running model ->
@@ -257,3 +273,9 @@ port ready : () -> Cmd msg
 
 
 port viewportChanged : (Int -> msg) -> Sub msg
+
+
+port requestOffset : () -> Cmd msg
+
+
+port receiveOffset : (ImageCrop.Point -> msg) -> Sub msg

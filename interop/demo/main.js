@@ -7,8 +7,7 @@ window.addEventListener('load', function () {
         selection: {topLeft: {x: 0, y: 0}, bottomRight: {x: 100, y: 100}},
         aspectRatio: null
     });
-    var
-        coordinates = document.getElementById('coordinates'),
+    var coordinates = document.getElementById('coordinates'),
         noSelection = document.getElementById('no-selection'),
         topLeftX = document.getElementById('top-left-x'),
         topLeftY = document.getElementById('top-left-y'),

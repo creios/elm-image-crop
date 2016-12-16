@@ -4,7 +4,6 @@ window.addEventListener('load', function () {
     var app = Elm.ImageCrop.Interop.embed(node, {
         image: {width: 1800, height: 1200},
         cropAreaWidth: getImageWidth(),
-        offset: {x: 20, y: 20},
         selection: {topLeft: {x: 0, y: 0}, bottomRight: {x: 100, y: 100}},
         aspectRatio: null
     });
@@ -35,6 +34,10 @@ window.addEventListener('load', function () {
     function getImageWidth() {
         return Math.round(+getComputedStyle(image).width.replace('px', ''));
     }
+    app.ports.requestOffset.subscribe(function () {
+        var rect = image.getBoundingClientRect();
+        app.ports.receiveOffset.send({x: rect.left, y: rect.top});
+    });
     aspectRatioInput.addEventListener('change', function (event) {
         var
             aspectRatios = {

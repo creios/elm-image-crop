@@ -13334,13 +13334,9 @@ var _user$project$ImageCrop$createAspectRatioSelection = F5(
 			mouseRectangle,
 			edgeConstraints);
 	});
-var _user$project$ImageCrop$init = F5(
-	function (image, cropAreaWidth, offset, selection, aspectRatio) {
-		return {image: image, cropAreaWidth: cropAreaWidth, offset: offset, selection: selection, aspectRatio: aspectRatio, move: _elm_lang$core$Maybe$Nothing, resize: _elm_lang$core$Maybe$Nothing, select: _elm_lang$core$Maybe$Nothing};
-	});
-var _user$project$ImageCrop$Model = F8(
-	function (a, b, c, d, e, f, g, h) {
-		return {image: a, cropAreaWidth: b, offset: c, selection: d, aspectRatio: e, move: f, resize: g, select: h};
+var _user$project$ImageCrop$Model = F5(
+	function (a, b, c, d, e) {
+		return {image: a, cropAreaWidth: b, selection: c, aspectRatio: d, action: e};
 	});
 var _user$project$ImageCrop$Point = F2(
 	function (a, b) {
@@ -13358,17 +13354,21 @@ var _user$project$ImageCrop$Movement = F2(
 	function (a, b) {
 		return {horizontal: a, vertical: b};
 	});
-var _user$project$ImageCrop$Move = F2(
+var _user$project$ImageCrop$MoveData = F2(
 	function (a, b) {
 		return {start: a, originalSelection: b};
 	});
-var _user$project$ImageCrop$Resize = F3(
+var _user$project$ImageCrop$ResizeData = F3(
 	function (a, b, c) {
 		return {direction: a, start: b, originalSelection: c};
 	});
-var _user$project$ImageCrop$Select = function (a) {
+var _user$project$ImageCrop$WaitingForOffsetData = function (a) {
 	return {start: a};
 };
+var _user$project$ImageCrop$SelectData = F2(
+	function (a, b) {
+		return {start: a, offset: b};
+	});
 var _user$project$ImageCrop$AspectRatio = F2(
 	function (a, b) {
 		return {width: a, height: b};
@@ -13396,6 +13396,36 @@ var _user$project$ImageCrop$onMouseDown = function (msg) {
 		{stopPropagation: true, preventDefault: true},
 		A2(_elm_lang$core$Json_Decode$map, msg, _user$project$ImageCrop$mouseEventDecoder));
 };
+var _user$project$ImageCrop$Select = function (a) {
+	return {ctor: 'Select', _0: a};
+};
+var _user$project$ImageCrop$receiveOffset = F2(
+	function (offset, model) {
+		var _p8 = model.action;
+		if (_p8.ctor === 'WaitingForOffset') {
+			var action = _user$project$ImageCrop$Select(
+				{start: _p8._0.start, offset: offset});
+			return _elm_lang$core$Native_Utils.update(
+				model,
+				{action: action});
+		} else {
+			return model;
+		}
+	});
+var _user$project$ImageCrop$WaitingForOffset = function (a) {
+	return {ctor: 'WaitingForOffset', _0: a};
+};
+var _user$project$ImageCrop$Resize = function (a) {
+	return {ctor: 'Resize', _0: a};
+};
+var _user$project$ImageCrop$Move = function (a) {
+	return {ctor: 'Move', _0: a};
+};
+var _user$project$ImageCrop$NoAction = {ctor: 'NoAction'};
+var _user$project$ImageCrop$init = F4(
+	function (image, cropAreaWidth, selection, aspectRatio) {
+		return {image: image, cropAreaWidth: cropAreaWidth, selection: selection, aspectRatio: aspectRatio, action: _user$project$ImageCrop$NoAction};
+	});
 var _user$project$ImageCrop$SelectEnd = function (a) {
 	return {ctor: 'SelectEnd', _0: a};
 };
@@ -13481,63 +13511,53 @@ var _user$project$ImageCrop$MoveAt = function (a) {
 	return {ctor: 'MoveAt', _0: a};
 };
 var _user$project$ImageCrop$subscriptions = function (model) {
-	var selectSubscriptions = function () {
-		var _p8 = model.select;
-		if (_p8.ctor === 'Just') {
-			return {
-				ctor: '::',
-				_0: _elm_lang$mouse$Mouse$moves(_user$project$ImageCrop$SelectAt),
-				_1: {
+	var subscriptions = function () {
+		var _p9 = model.action;
+		switch (_p9.ctor) {
+			case 'Move':
+				return {
 					ctor: '::',
-					_0: _elm_lang$mouse$Mouse$ups(_user$project$ImageCrop$SelectEnd),
-					_1: {ctor: '[]'}
-				}
-			};
-		} else {
-			return {ctor: '[]'};
+					_0: _elm_lang$mouse$Mouse$moves(_user$project$ImageCrop$MoveAt),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$mouse$Mouse$ups(_user$project$ImageCrop$MoveEnd),
+						_1: {ctor: '[]'}
+					}
+				};
+			case 'Resize':
+				return {
+					ctor: '::',
+					_0: _elm_lang$mouse$Mouse$moves(_user$project$ImageCrop$ResizeAt),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$mouse$Mouse$ups(_user$project$ImageCrop$ResizeEnd),
+						_1: {ctor: '[]'}
+					}
+				};
+			case 'Select':
+				return {
+					ctor: '::',
+					_0: _elm_lang$mouse$Mouse$moves(_user$project$ImageCrop$SelectAt),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$mouse$Mouse$ups(_user$project$ImageCrop$SelectEnd),
+						_1: {ctor: '[]'}
+					}
+				};
+			default:
+				return {ctor: '[]'};
 		}
 	}();
-	var resizeSubscriptions = function () {
-		var _p9 = model.resize;
-		if (_p9.ctor === 'Just') {
-			return {
-				ctor: '::',
-				_0: _elm_lang$mouse$Mouse$moves(_user$project$ImageCrop$ResizeAt),
-				_1: {
-					ctor: '::',
-					_0: _elm_lang$mouse$Mouse$ups(_user$project$ImageCrop$ResizeEnd),
-					_1: {ctor: '[]'}
-				}
-			};
-		} else {
-			return {ctor: '[]'};
-		}
-	}();
-	var moveSubscriptions = function () {
-		var _p10 = model.move;
-		if (_p10.ctor === 'Just') {
-			return {
-				ctor: '::',
-				_0: _elm_lang$mouse$Mouse$moves(_user$project$ImageCrop$MoveAt),
-				_1: {
-					ctor: '::',
-					_0: _elm_lang$mouse$Mouse$ups(_user$project$ImageCrop$MoveEnd),
-					_1: {ctor: '[]'}
-				}
-			};
-		} else {
-			return {ctor: '[]'};
-		}
-	}();
-	return _elm_lang$core$Platform_Sub$batch(
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			moveSubscriptions,
-			A2(_elm_lang$core$Basics_ops['++'], resizeSubscriptions, selectSubscriptions)));
+	return _elm_lang$core$Platform_Sub$batch(subscriptions);
 };
 var _user$project$ImageCrop$MoveStart = function (a) {
 	return {ctor: 'MoveStart', _0: a};
 };
+var _user$project$ImageCrop$RequestOffset = {ctor: 'RequestOffset'};
+var _user$project$ImageCrop$SelectionChanged = function (a) {
+	return {ctor: 'SelectionChanged', _0: a};
+};
+var _user$project$ImageCrop$NoNotification = {ctor: 'NoNotification'};
 var _user$project$ImageCrop$DiagonalDirection = {ctor: 'DiagonalDirection'};
 var _user$project$ImageCrop$createSelection = F3(
 	function (select, model, position) {
@@ -13556,16 +13576,16 @@ var _user$project$ImageCrop$createSelection = F3(
 				};
 			};
 			var relativeCoordinates = function (point) {
-				return {x: point.x - model.offset.x, y: point.y - model.offset.y};
+				return {x: point.x - select.offset.x, y: point.y - select.offset.y};
 			};
 			var normalizedStart = scalePoint(
 				relativeCoordinates(select.start));
 			var normalizedPosition = scalePoint(
 				relativeCoordinates(position));
 			var selection = function () {
-				var _p11 = model.aspectRatio;
-				if (_p11.ctor === 'Just') {
-					return A5(_user$project$ImageCrop$createAspectRatioSelection, model.image, _p11._0, _user$project$ImageCrop$DiagonalDirection, normalizedStart, normalizedPosition);
+				var _p10 = model.aspectRatio;
+				if (_p10.ctor === 'Just') {
+					return A5(_user$project$ImageCrop$createAspectRatioSelection, model.image, _p10._0, _user$project$ImageCrop$DiagonalDirection, normalizedStart, normalizedPosition);
 				} else {
 					return A3(_user$project$ImageCrop$normalizeEdges, model.image, normalizedStart, normalizedPosition);
 				}
@@ -13575,8 +13595,8 @@ var _user$project$ImageCrop$createSelection = F3(
 	});
 var _user$project$ImageCrop$recalculateSelection = F3(
 	function (image, aspectRatio, selection) {
-		var _p12 = selection;
-		var topLeft = _p12.topLeft;
+		var _p11 = selection;
+		var topLeft = _p11.topLeft;
 		var area = _user$project$ImageCrop$rectangleArea(selection);
 		var height = _elm_lang$core$Basics$round(
 			_elm_lang$core$Basics$sqrt(
@@ -13590,11 +13610,11 @@ var _user$project$ImageCrop$recalculateSelection = F3(
 var _user$project$ImageCrop$changeAspectRatio = F2(
 	function (maybeAspectRatio, model) {
 		var selectionUpdated = function () {
-			var _p13 = maybeAspectRatio;
-			if (_p13.ctor === 'Just') {
-				var _p14 = model.selection;
-				if (_p14.ctor === 'Just') {
-					var newSelection = A3(_user$project$ImageCrop$recalculateSelection, model.image, _p13._0, _p14._0);
+			var _p12 = maybeAspectRatio;
+			if (_p12.ctor === 'Just') {
+				var _p13 = model.selection;
+				if (_p13.ctor === 'Just') {
+					var newSelection = A3(_user$project$ImageCrop$recalculateSelection, model.image, _p12._0, _p13._0);
 					return _elm_lang$core$Native_Utils.update(
 						model,
 						{
@@ -13620,8 +13640,8 @@ var _user$project$ImageCrop$PositionTop = {ctor: 'PositionTop'};
 var _user$project$ImageCrop$Vertical = {ctor: 'Vertical'};
 var _user$project$ImageCrop$Horizontal = {ctor: 'Horizontal'};
 var _user$project$ImageCrop$positionCssHelper = function (position) {
-	var _p15 = position;
-	switch (_p15.ctor) {
+	var _p14 = position;
+	switch (_p14.ctor) {
 		case 'PositionTop':
 			return {ctor: '_Tuple2', _0: 'top', _1: _user$project$ImageCrop$Horizontal};
 		case 'PositionRight':
@@ -13652,9 +13672,9 @@ var _user$project$ImageCrop$border = function (position) {
 							_elm_lang$core$Basics_ops['++'],
 							'EISmna81UTAfRWeUsACH5BAkKAAAALAAAAAAIAAgAAAIPFA6imGrnXlvQo',
 							A2(_elm_lang$core$Basics_ops['++'], 'cjspbUAACH5BAkKAAAALAAAAAAIAAgAAAIPlIBgl5vq0GLQtFhpfaIAACH', '5BAUKAAAALAAAAAAIAAgAAAIPlIFgknq52mJowlixe6gAADs=')))))));
-	var _p16 = _user$project$ImageCrop$positionCssHelper(position);
-	var cssPosition = _p16._0;
-	var orientation = _p16._1;
+	var _p15 = _user$project$ImageCrop$positionCssHelper(position);
+	var cssPosition = _p15._0;
+	var orientation = _p15._1;
 	return A2(
 		_elm_lang$html$Html$div,
 		{
@@ -13757,15 +13777,15 @@ var _user$project$ImageCrop$generalizeDirection = function (direction) {
 			}
 		}) ? _user$project$ImageCrop$VerticalDirection : _user$project$ImageCrop$DiagonalDirection);
 };
-var _user$project$ImageCrop$calculateAnchor = function (_p17) {
-	var _p18 = _p17;
-	var _p20 = _p18.direction;
-	var _p19 = _p18.originalSelection;
-	var topLeft = _p19.topLeft;
-	var bottomRight = _p19.bottomRight;
+var _user$project$ImageCrop$calculateAnchor = function (_p16) {
+	var _p17 = _p16;
+	var _p19 = _p17.direction;
+	var _p18 = _p17.originalSelection;
+	var topLeft = _p18.topLeft;
+	var bottomRight = _p18.bottomRight;
 	var anchorX = A2(
 		_elm_lang$core$List$member,
-		_p20,
+		_p19,
 		{
 			ctor: '::',
 			_0: _user$project$ImageCrop$NorthEast,
@@ -13780,7 +13800,7 @@ var _user$project$ImageCrop$calculateAnchor = function (_p17) {
 			}
 		}) ? topLeft.x : (A2(
 		_elm_lang$core$List$member,
-		_p20,
+		_p19,
 		{
 			ctor: '::',
 			_0: _user$project$ImageCrop$North,
@@ -13793,7 +13813,7 @@ var _user$project$ImageCrop$calculateAnchor = function (_p17) {
 		_elm_lang$core$Basics$toFloat(topLeft.x + bottomRight.x) / 2) : bottomRight.x);
 	var anchorY = A2(
 		_elm_lang$core$List$member,
-		_p20,
+		_p19,
 		{
 			ctor: '::',
 			_0: _user$project$ImageCrop$SouthWest,
@@ -13808,7 +13828,7 @@ var _user$project$ImageCrop$calculateAnchor = function (_p17) {
 			}
 		}) ? topLeft.y : (A2(
 		_elm_lang$core$List$member,
-		_p20,
+		_p19,
 		{
 			ctor: '::',
 			_0: _user$project$ImageCrop$West,
@@ -13823,32 +13843,95 @@ var _user$project$ImageCrop$calculateAnchor = function (_p17) {
 };
 var _user$project$ImageCrop$resizeSelection = F3(
 	function (model, resize, position) {
+		var startingPointY = A2(
+			_elm_lang$core$List$member,
+			resize.direction,
+			{
+				ctor: '::',
+				_0: _user$project$ImageCrop$NorthWest,
+				_1: {
+					ctor: '::',
+					_0: _user$project$ImageCrop$North,
+					_1: {
+						ctor: '::',
+						_0: _user$project$ImageCrop$NorthEast,
+						_1: {ctor: '[]'}
+					}
+				}
+			}) ? resize.originalSelection.topLeft.y : (A2(
+			_elm_lang$core$List$member,
+			resize.direction,
+			{
+				ctor: '::',
+				_0: _user$project$ImageCrop$SouthWest,
+				_1: {
+					ctor: '::',
+					_0: _user$project$ImageCrop$South,
+					_1: {
+						ctor: '::',
+						_0: _user$project$ImageCrop$SouthEast,
+						_1: {ctor: '[]'}
+					}
+				}
+			}) ? resize.originalSelection.bottomRight.y : _elm_lang$core$Basics$round(
+			_elm_lang$core$Basics$toFloat(resize.originalSelection.bottomRight.y - resize.originalSelection.topLeft.y) / 2));
+		var startingPointX = A2(
+			_elm_lang$core$List$member,
+			resize.direction,
+			{
+				ctor: '::',
+				_0: _user$project$ImageCrop$NorthWest,
+				_1: {
+					ctor: '::',
+					_0: _user$project$ImageCrop$West,
+					_1: {
+						ctor: '::',
+						_0: _user$project$ImageCrop$SouthWest,
+						_1: {ctor: '[]'}
+					}
+				}
+			}) ? resize.originalSelection.topLeft.x : (A2(
+			_elm_lang$core$List$member,
+			resize.direction,
+			{
+				ctor: '::',
+				_0: _user$project$ImageCrop$NorthEast,
+				_1: {
+					ctor: '::',
+					_0: _user$project$ImageCrop$East,
+					_1: {
+						ctor: '::',
+						_0: _user$project$ImageCrop$SouthEast,
+						_1: {ctor: '[]'}
+					}
+				}
+			}) ? resize.originalSelection.bottomRight.x : _elm_lang$core$Basics$round(
+			_elm_lang$core$Basics$toFloat(resize.originalSelection.bottomRight.x - resize.originalSelection.topLeft.x) / 2));
+		var startingPoint = {x: startingPointX, y: startingPointY};
 		var factor = _elm_lang$core$Basics$toFloat(model.image.width) / _elm_lang$core$Basics$toFloat(model.cropAreaWidth);
 		var scale = function (value) {
 			return _elm_lang$core$Basics$round(
 				_elm_lang$core$Basics$toFloat(value) * factor);
 		};
-		var scalePoint = function (point) {
+		var scaleMovement = function (movement) {
 			return {
-				x: scale(point.x),
-				y: scale(point.y)
+				horizontal: scale(movement.horizontal),
+				vertical: scale(movement.vertical)
 			};
 		};
-		var relativeCoordinates = function (point) {
-			return {x: point.x - model.offset.x, y: point.y - model.offset.y};
-		};
-		var normalizedPosition = scalePoint(
-			relativeCoordinates(position));
-		var _p21 = resize.originalSelection;
-		var topLeft = _p21.topLeft;
-		var bottomRight = _p21.bottomRight;
-		var _p22 = model.aspectRatio;
-		if (_p22.ctor === 'Just') {
+		var movement = {horizontal: position.x - resize.start.x, vertical: position.y - resize.start.y};
+		var normalizedMovement = scaleMovement(movement);
+		var normalizedPosition = A2(_user$project$ImageCrop$movePoint, normalizedMovement, startingPoint);
+		var _p20 = resize.originalSelection;
+		var topLeft = _p20.topLeft;
+		var bottomRight = _p20.bottomRight;
+		var _p21 = model.aspectRatio;
+		if (_p21.ctor === 'Just') {
 			var anchor = _user$project$ImageCrop$calculateAnchor(resize);
 			return A5(
 				_user$project$ImageCrop$createAspectRatioSelection,
 				model.image,
-				_p22._0,
+				_p21._0,
 				_user$project$ImageCrop$generalizeDirection(resize.direction),
 				anchor,
 				normalizedPosition);
@@ -13902,108 +13985,141 @@ var _user$project$ImageCrop$resizeSelection = F3(
 	});
 var _user$project$ImageCrop$updateHelper = F2(
 	function (msg, model) {
-		var _p23 = msg;
-		switch (_p23.ctor) {
+		var _p22 = msg;
+		switch (_p22.ctor) {
 			case 'MoveStart':
-				var _p25 = _p23._0;
-				if (_elm_lang$core$Native_Utils.eq(_p25.button, 0)) {
-					var _p24 = model.selection;
-					if (_p24.ctor === 'Just') {
-						var move = {start: _p25.position, originalSelection: _p24._0};
-						return _elm_lang$core$Native_Utils.update(
-							model,
-							{
-								move: _elm_lang$core$Maybe$Just(move)
-							});
+				var _p24 = _p22._0;
+				if (_elm_lang$core$Native_Utils.eq(_p24.button, 0)) {
+					var _p23 = model.selection;
+					if (_p23.ctor === 'Just') {
+						var move = {start: _p24.position, originalSelection: _p23._0};
+						return {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								model,
+								{
+									action: _user$project$ImageCrop$Move(move)
+								}),
+							_1: _user$project$ImageCrop$NoNotification
+						};
 					} else {
-						return model;
+						return {ctor: '_Tuple2', _0: model, _1: _user$project$ImageCrop$NoNotification};
 					}
 				} else {
-					return model;
+					return {ctor: '_Tuple2', _0: model, _1: _user$project$ImageCrop$NoNotification};
 				}
 			case 'MoveAt':
-				var _p26 = model.move;
-				if (_p26.ctor === 'Just') {
-					var selection = A4(_user$project$ImageCrop$moveSelection, model.image, model.cropAreaWidth, _p26._0, _p23._0);
-					return _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							selection: _elm_lang$core$Maybe$Just(selection)
-						});
+				var _p25 = model.action;
+				if (_p25.ctor === 'Move') {
+					var selection = _elm_lang$core$Maybe$Just(
+						A4(_user$project$ImageCrop$moveSelection, model.image, model.cropAreaWidth, _p25._0, _p22._0));
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{selection: selection}),
+						_1: _user$project$ImageCrop$SelectionChanged(selection)
+					};
 				} else {
-					return model;
+					return {ctor: '_Tuple2', _0: model, _1: _user$project$ImageCrop$NoNotification};
 				}
 			case 'MoveEnd':
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{move: _elm_lang$core$Maybe$Nothing});
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{action: _user$project$ImageCrop$NoAction}),
+					_1: _user$project$ImageCrop$NoNotification
+				};
 			case 'ResizeStart':
-				var _p28 = _p23._1;
-				if (_elm_lang$core$Native_Utils.eq(_p28.button, 0)) {
-					var _p27 = model.selection;
-					if (_p27.ctor === 'Just') {
-						var resize = {direction: _p23._0, start: _p28.position, originalSelection: _p27._0};
-						return _elm_lang$core$Native_Utils.update(
-							model,
-							{
-								resize: _elm_lang$core$Maybe$Just(resize)
-							});
+				var _p27 = _p22._1;
+				if (_elm_lang$core$Native_Utils.eq(_p27.button, 0)) {
+					var _p26 = model.selection;
+					if (_p26.ctor === 'Just') {
+						var resize = {direction: _p22._0, start: _p27.position, originalSelection: _p26._0};
+						return {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								model,
+								{
+									action: _user$project$ImageCrop$Resize(resize)
+								}),
+							_1: _user$project$ImageCrop$NoNotification
+						};
 					} else {
-						return model;
+						return {ctor: '_Tuple2', _0: model, _1: _user$project$ImageCrop$NoNotification};
 					}
 				} else {
-					return model;
+					return {ctor: '_Tuple2', _0: model, _1: _user$project$ImageCrop$NoNotification};
 				}
 			case 'ResizeAt':
-				var _p29 = model.resize;
-				if (_p29.ctor === 'Just') {
-					var selection = A3(_user$project$ImageCrop$resizeSelection, model, _p29._0, _p23._0);
-					return _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							selection: _elm_lang$core$Maybe$Just(selection)
-						});
+				var _p28 = model.action;
+				if (_p28.ctor === 'Resize') {
+					var selection = _elm_lang$core$Maybe$Just(
+						A3(_user$project$ImageCrop$resizeSelection, model, _p28._0, _p22._0));
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{selection: selection}),
+						_1: _user$project$ImageCrop$SelectionChanged(selection)
+					};
 				} else {
-					return model;
+					return {ctor: '_Tuple2', _0: model, _1: _user$project$ImageCrop$NoNotification};
 				}
 			case 'ResizeEnd':
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{resize: _elm_lang$core$Maybe$Nothing});
-			case 'SelectStart':
-				var _p30 = _p23._0;
-				if (_elm_lang$core$Native_Utils.eq(_p30.button, 0)) {
-					var select = _elm_lang$core$Maybe$Just(
-						{start: _p30.position});
-					return _elm_lang$core$Native_Utils.update(
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{selection: _elm_lang$core$Maybe$Nothing, select: select});
+						{action: _user$project$ImageCrop$NoAction}),
+					_1: _user$project$ImageCrop$NoNotification
+				};
+			case 'SelectStart':
+				var _p29 = _p22._0;
+				if (_elm_lang$core$Native_Utils.eq(_p29.button, 0)) {
+					var action = _user$project$ImageCrop$WaitingForOffset(
+						{start: _p29.position});
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{selection: _elm_lang$core$Maybe$Nothing, action: action}),
+						_1: _user$project$ImageCrop$RequestOffset
+					};
 				} else {
-					return model;
+					return {ctor: '_Tuple2', _0: model, _1: _user$project$ImageCrop$NoNotification};
 				}
 			case 'SelectAt':
-				var _p31 = model.select;
-				if (_p31.ctor === 'Just') {
-					var selection = A3(_user$project$ImageCrop$createSelection, _p31._0, model, _p23._0);
-					return _elm_lang$core$Native_Utils.update(
-						model,
-						{selection: selection});
+				var _p30 = model.action;
+				if (_p30.ctor === 'Select') {
+					var selection = A3(_user$project$ImageCrop$createSelection, _p30._0, model, _p22._0);
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{selection: selection}),
+						_1: _user$project$ImageCrop$SelectionChanged(selection)
+					};
 				} else {
-					return model;
+					return {ctor: '_Tuple2', _0: model, _1: _user$project$ImageCrop$NoNotification};
 				}
 			default:
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{select: _elm_lang$core$Maybe$Nothing});
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{action: _user$project$ImageCrop$NoAction}),
+					_1: _user$project$ImageCrop$NoNotification
+				};
 		}
 	});
 var _user$project$ImageCrop$update = F2(
 	function (msg, model) {
-		return {
-			ctor: '_Tuple2',
-			_0: A2(_user$project$ImageCrop$updateHelper, msg, model),
-			_1: _elm_lang$core$Platform_Cmd$none
-		};
+		var _p31 = A2(_user$project$ImageCrop$updateHelper, msg, model);
+		var newModel = _p31._0;
+		var notification = _p31._1;
+		return {ctor: '_Tuple3', _0: newModel, _1: _elm_lang$core$Platform_Cmd$none, _2: notification};
 	});
 var _user$project$ImageCrop$handle = function (orientation) {
 	var cursor = function () {
@@ -14317,7 +14433,7 @@ var _user$project$ImageCrop_Interop$init = function (_p0) {
 	var _p1 = _p0;
 	return {
 		ctor: '_Tuple2',
-		_0: A5(_user$project$ImageCrop$init, _p1.image, _p1.cropAreaWidth, _p1.offset, _p1.selection, _p1.aspectRatio),
+		_0: A4(_user$project$ImageCrop$init, _p1.image, _p1.cropAreaWidth, _p1.selection, _p1.aspectRatio),
 		_1: _elm_lang$core$Platform_Cmd$none
 	};
 };
@@ -14327,28 +14443,6 @@ var _user$project$ImageCrop_Interop$selectionChanged = _elm_lang$core$Native_Pla
 		return (v.ctor === 'Nothing') ? null : {
 			topLeft: {x: v._0.topLeft.x, y: v._0.topLeft.y},
 			bottomRight: {x: v._0.bottomRight.x, y: v._0.bottomRight.y}
-		};
-	});
-var _user$project$ImageCrop_Interop$update = F2(
-	function (msg, model) {
-		var newModel = function () {
-			var _p2 = msg;
-			switch (_p2.ctor) {
-				case 'ViewportChanged':
-					return _elm_lang$core$Native_Utils.update(
-						model,
-						{cropAreaWidth: _p2._0});
-				case 'ChangeAspectRatio':
-					return A2(_user$project$ImageCrop$changeAspectRatio, _p2._0, model);
-				default:
-					return _elm_lang$core$Tuple$first(
-						A2(_user$project$ImageCrop$update, _p2._0, model));
-			}
-		}();
-		return {
-			ctor: '_Tuple2',
-			_0: newModel,
-			_1: _user$project$ImageCrop_Interop$selectionChanged(newModel.selection)
 		};
 	});
 var _user$project$ImageCrop_Interop$viewportChanged = _elm_lang$core$Native_Platform.incomingPort('viewportChanged', _elm_lang$core$Json_Decode$int);
@@ -14378,13 +14472,89 @@ var _user$project$ImageCrop_Interop$changeAspectRatio = _elm_lang$core$Native_Pl
 				_1: {ctor: '[]'}
 			}
 		}));
-var _user$project$ImageCrop_Interop$Flags = F5(
-	function (a, b, c, d, e) {
-		return {image: a, cropAreaWidth: b, offset: c, selection: d, aspectRatio: e};
+var _user$project$ImageCrop_Interop$requestOffset = _elm_lang$core$Native_Platform.outgoingPort(
+	'requestOffset',
+	function (v) {
+		return null;
+	});
+var _user$project$ImageCrop_Interop$receiveOffset = _elm_lang$core$Native_Platform.incomingPort(
+	'receiveOffset',
+	A2(
+		_elm_lang$core$Json_Decode$andThen,
+		function (x) {
+			return A2(
+				_elm_lang$core$Json_Decode$andThen,
+				function (y) {
+					return _elm_lang$core$Json_Decode$succeed(
+						{x: x, y: y});
+				},
+				A2(_elm_lang$core$Json_Decode$field, 'y', _elm_lang$core$Json_Decode$int));
+		},
+		A2(_elm_lang$core$Json_Decode$field, 'x', _elm_lang$core$Json_Decode$int)));
+var _user$project$ImageCrop_Interop$Flags = F4(
+	function (a, b, c, d) {
+		return {image: a, cropAreaWidth: b, selection: c, aspectRatio: d};
 	});
 var _user$project$ImageCrop_Interop$ImageCropMsg = function (a) {
 	return {ctor: 'ImageCropMsg', _0: a};
 };
+var _user$project$ImageCrop_Interop$update = F2(
+	function (msg, model) {
+		var _p2 = msg;
+		switch (_p2.ctor) {
+			case 'ViewportChanged':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{cropAreaWidth: _p2._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'ReceiveOffset':
+				return {
+					ctor: '_Tuple2',
+					_0: A2(_user$project$ImageCrop$receiveOffset, _p2._0, model),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'ChangeAspectRatio':
+				return {
+					ctor: '_Tuple2',
+					_0: A2(_user$project$ImageCrop$changeAspectRatio, _p2._0, model),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				var _p3 = A2(_user$project$ImageCrop$update, _p2._0, model);
+				var newModel = _p3._0;
+				var newCmd = _p3._1;
+				var notification = _p3._2;
+				var interopCmd = function () {
+					var _p4 = notification;
+					switch (_p4.ctor) {
+						case 'RequestOffset':
+							return _user$project$ImageCrop_Interop$requestOffset(
+								{ctor: '_Tuple0'});
+						case 'SelectionChanged':
+							return _user$project$ImageCrop_Interop$selectionChanged(_p4._0);
+						default:
+							return _elm_lang$core$Platform_Cmd$none;
+					}
+				}();
+				return {
+					ctor: '_Tuple2',
+					_0: newModel,
+					_1: _elm_lang$core$Platform_Cmd$batch(
+						{
+							ctor: '::',
+							_0: A2(_elm_lang$core$Platform_Cmd$map, _user$project$ImageCrop_Interop$ImageCropMsg, newCmd),
+							_1: {
+								ctor: '::',
+								_0: interopCmd,
+								_1: {ctor: '[]'}
+							}
+						})
+				};
+		}
+	});
 var _user$project$ImageCrop_Interop$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$map,
@@ -14393,6 +14563,9 @@ var _user$project$ImageCrop_Interop$view = function (model) {
 };
 var _user$project$ImageCrop_Interop$ChangeAspectRatio = function (a) {
 	return {ctor: 'ChangeAspectRatio', _0: a};
+};
+var _user$project$ImageCrop_Interop$ReceiveOffset = function (a) {
+	return {ctor: 'ReceiveOffset', _0: a};
 };
 var _user$project$ImageCrop_Interop$ViewportChanged = function (a) {
 	return {ctor: 'ViewportChanged', _0: a};
@@ -14408,11 +14581,15 @@ var _user$project$ImageCrop_Interop$subscriptions = function (model) {
 			_0: _user$project$ImageCrop_Interop$viewportChanged(_user$project$ImageCrop_Interop$ViewportChanged),
 			_1: {
 				ctor: '::',
-				_0: _user$project$ImageCrop_Interop$changeAspectRatio(_user$project$ImageCrop_Interop$ChangeAspectRatio),
+				_0: _user$project$ImageCrop_Interop$receiveOffset(_user$project$ImageCrop_Interop$ReceiveOffset),
 				_1: {
 					ctor: '::',
-					_0: imageCropSubs,
-					_1: {ctor: '[]'}
+					_0: _user$project$ImageCrop_Interop$changeAspectRatio(_user$project$ImageCrop_Interop$ChangeAspectRatio),
+					_1: {
+						ctor: '::',
+						_0: imageCropSubs,
+						_1: {ctor: '[]'}
+					}
 				}
 			}
 		});
@@ -14430,53 +14607,34 @@ var _user$project$ImageCrop_Interop$main = _elm_lang$html$Html$programWithFlags(
 						function (image) {
 							return A2(
 								_elm_lang$core$Json_Decode$andThen,
-								function (offset) {
-									return A2(
-										_elm_lang$core$Json_Decode$andThen,
-										function (selection) {
-											return _elm_lang$core$Json_Decode$succeed(
-												{aspectRatio: aspectRatio, cropAreaWidth: cropAreaWidth, image: image, offset: offset, selection: selection});
-										},
-										A2(
-											_elm_lang$core$Json_Decode$field,
-											'selection',
-											_elm_lang$core$Json_Decode$oneOf(
-												{
-													ctor: '::',
-													_0: _elm_lang$core$Json_Decode$null(_elm_lang$core$Maybe$Nothing),
-													_1: {
-														ctor: '::',
-														_0: A2(
-															_elm_lang$core$Json_Decode$map,
-															_elm_lang$core$Maybe$Just,
-															A2(
+								function (selection) {
+									return _elm_lang$core$Json_Decode$succeed(
+										{aspectRatio: aspectRatio, cropAreaWidth: cropAreaWidth, image: image, selection: selection});
+								},
+								A2(
+									_elm_lang$core$Json_Decode$field,
+									'selection',
+									_elm_lang$core$Json_Decode$oneOf(
+										{
+											ctor: '::',
+											_0: _elm_lang$core$Json_Decode$null(_elm_lang$core$Maybe$Nothing),
+											_1: {
+												ctor: '::',
+												_0: A2(
+													_elm_lang$core$Json_Decode$map,
+													_elm_lang$core$Maybe$Just,
+													A2(
+														_elm_lang$core$Json_Decode$andThen,
+														function (bottomRight) {
+															return A2(
 																_elm_lang$core$Json_Decode$andThen,
-																function (bottomRight) {
-																	return A2(
-																		_elm_lang$core$Json_Decode$andThen,
-																		function (topLeft) {
-																			return _elm_lang$core$Json_Decode$succeed(
-																				{bottomRight: bottomRight, topLeft: topLeft});
-																		},
-																		A2(
-																			_elm_lang$core$Json_Decode$field,
-																			'topLeft',
-																			A2(
-																				_elm_lang$core$Json_Decode$andThen,
-																				function (x) {
-																					return A2(
-																						_elm_lang$core$Json_Decode$andThen,
-																						function (y) {
-																							return _elm_lang$core$Json_Decode$succeed(
-																								{x: x, y: y});
-																						},
-																						A2(_elm_lang$core$Json_Decode$field, 'y', _elm_lang$core$Json_Decode$int));
-																				},
-																				A2(_elm_lang$core$Json_Decode$field, 'x', _elm_lang$core$Json_Decode$int))));
+																function (topLeft) {
+																	return _elm_lang$core$Json_Decode$succeed(
+																		{bottomRight: bottomRight, topLeft: topLeft});
 																},
 																A2(
 																	_elm_lang$core$Json_Decode$field,
-																	'bottomRight',
+																	'topLeft',
 																	A2(
 																		_elm_lang$core$Json_Decode$andThen,
 																		function (x) {
@@ -14488,26 +14646,26 @@ var _user$project$ImageCrop_Interop$main = _elm_lang$html$Html$programWithFlags(
 																				},
 																				A2(_elm_lang$core$Json_Decode$field, 'y', _elm_lang$core$Json_Decode$int));
 																		},
-																		A2(_elm_lang$core$Json_Decode$field, 'x', _elm_lang$core$Json_Decode$int))))),
-														_1: {ctor: '[]'}
-													}
-												})));
-								},
-								A2(
-									_elm_lang$core$Json_Decode$field,
-									'offset',
-									A2(
-										_elm_lang$core$Json_Decode$andThen,
-										function (x) {
-											return A2(
-												_elm_lang$core$Json_Decode$andThen,
-												function (y) {
-													return _elm_lang$core$Json_Decode$succeed(
-														{x: x, y: y});
-												},
-												A2(_elm_lang$core$Json_Decode$field, 'y', _elm_lang$core$Json_Decode$int));
-										},
-										A2(_elm_lang$core$Json_Decode$field, 'x', _elm_lang$core$Json_Decode$int))));
+																		A2(_elm_lang$core$Json_Decode$field, 'x', _elm_lang$core$Json_Decode$int))));
+														},
+														A2(
+															_elm_lang$core$Json_Decode$field,
+															'bottomRight',
+															A2(
+																_elm_lang$core$Json_Decode$andThen,
+																function (x) {
+																	return A2(
+																		_elm_lang$core$Json_Decode$andThen,
+																		function (y) {
+																			return _elm_lang$core$Json_Decode$succeed(
+																				{x: x, y: y});
+																		},
+																		A2(_elm_lang$core$Json_Decode$field, 'y', _elm_lang$core$Json_Decode$int));
+																},
+																A2(_elm_lang$core$Json_Decode$field, 'x', _elm_lang$core$Json_Decode$int))))),
+												_1: {ctor: '[]'}
+											}
+										})));
 						},
 						A2(
 							_elm_lang$core$Json_Decode$field,
@@ -14559,7 +14717,7 @@ var Elm = {};
 Elm['ImageCrop'] = Elm['ImageCrop'] || {};
 Elm['ImageCrop']['Interop'] = Elm['ImageCrop']['Interop'] || {};
 if (typeof _user$project$ImageCrop_Interop$main !== 'undefined') {
-    _user$project$ImageCrop_Interop$main(Elm['ImageCrop']['Interop'], 'ImageCrop.Interop', {"types":{"unions":{"ImageCrop.Direction":{"args":[],"tags":{"North":[],"South":[],"SouthEast":[],"NorthEast":[],"NorthWest":[],"West":[],"SouthWest":[],"East":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"ImageCrop.Interop.Msg":{"args":[],"tags":{"ImageCropMsg":["ImageCrop.Msg"],"ChangeAspectRatio":["Maybe.Maybe ImageCrop.AspectRatio"],"ViewportChanged":["Int"]}},"ImageCrop.Msg":{"args":[],"tags":{"SelectEnd":["Mouse.Position"],"ResizeAt":["Mouse.Position"],"ResizeStart":["ImageCrop.Direction","ImageCrop.MouseButtonEvent"],"MoveEnd":["Mouse.Position"],"MoveStart":["ImageCrop.MouseButtonEvent"],"MoveAt":["Mouse.Position"],"SelectAt":["Mouse.Position"],"ResizeEnd":["Mouse.Position"],"SelectStart":["ImageCrop.MouseButtonEvent"]}}},"aliases":{"Mouse.Position":{"args":[],"type":"{ x : Int, y : Int }"},"ImageCrop.MouseButtonEvent":{"args":[],"type":"{ position : Mouse.Position, button : Int }"},"ImageCrop.AspectRatio":{"args":[],"type":"{ width : Float, height : Float }"}},"message":"ImageCrop.Interop.Msg"},"versions":{"elm":"0.18.0"}});
+    _user$project$ImageCrop_Interop$main(Elm['ImageCrop']['Interop'], 'ImageCrop.Interop', {"types":{"unions":{"ImageCrop.Direction":{"args":[],"tags":{"North":[],"South":[],"SouthEast":[],"NorthEast":[],"NorthWest":[],"West":[],"SouthWest":[],"East":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"ImageCrop.Interop.Msg":{"args":[],"tags":{"ImageCropMsg":["ImageCrop.Msg"],"ChangeAspectRatio":["Maybe.Maybe ImageCrop.AspectRatio"],"ViewportChanged":["Int"],"ReceiveOffset":["ImageCrop.Point"]}},"ImageCrop.Msg":{"args":[],"tags":{"SelectEnd":["Mouse.Position"],"ResizeAt":["Mouse.Position"],"ResizeStart":["ImageCrop.Direction","ImageCrop.MouseButtonEvent"],"MoveEnd":["Mouse.Position"],"MoveStart":["ImageCrop.MouseButtonEvent"],"MoveAt":["Mouse.Position"],"SelectAt":["Mouse.Position"],"ResizeEnd":["Mouse.Position"],"SelectStart":["ImageCrop.MouseButtonEvent"]}}},"aliases":{"Mouse.Position":{"args":[],"type":"{ x : Int, y : Int }"},"ImageCrop.MouseButtonEvent":{"args":[],"type":"{ position : Mouse.Position, button : Int }"},"ImageCrop.Point":{"args":[],"type":"{ x : Int, y : Int }"},"ImageCrop.AspectRatio":{"args":[],"type":"{ width : Float, height : Float }"}},"message":"ImageCrop.Interop.Msg"},"versions":{"elm":"0.18.0"}});
 }
 
 if (typeof define === "function" && define['amd'])

@@ -990,6 +990,9 @@ selectionView model cropArea =
                 [ div
                     [ selectionStyle displaySelection
                     , onMouseDown MoveStart
+                    , onTouchStart MoveStart
+                    , onTouchMove MoveAt
+                    , onTouchEnd MoveEnd
                     ]
                     (borders ++ handles)
                 , shadow
@@ -1181,6 +1184,9 @@ handle orientation =
     in
         div
             [ onMouseDown (ResizeStart orientation)
+            , onTouchStart (ResizeStart orientation)
+            , onTouchMove ResizeAt
+            , onTouchEnd ResizeEnd
             , style
                 [ ( "background-color", "rgba(49,28,28,0.58)" )
                 , ( "border", "1px #eee solid" )
@@ -1201,7 +1207,11 @@ handle orientation =
 shadow : Rectangle -> Html Msg
 shadow position =
     div
-        [ style
+        [ onMouseDown SelectStart
+        , onTouchStart SelectStart
+        , onTouchMove SelectAt
+        , onTouchEnd SelectEnd
+        , style
             [ ( "background-color", "#000000" )
             , ( "opacity", "0.5" )
             , ( "position", "absolute" )
@@ -1210,7 +1220,6 @@ shadow position =
             , ( "width", px (position.bottomRight.x - position.topLeft.x) )
             , ( "height", px (position.bottomRight.y - position.topLeft.y) )
             ]
-        , onMouseDown SelectStart
         ]
         []
 
@@ -1275,9 +1284,52 @@ type alias MouseButtonEvent =
     }
 
 
+mouseEventDecoder : Json.Decoder MouseButtonEvent
 mouseEventDecoder =
     Json.map3
         (\x y button -> MouseButtonEvent (Mouse.Position x y) button)
         (field "pageX" Json.int)
         (field "pageY" Json.int)
         (field "button" Json.int)
+
+
+onTouchStart : (MouseButtonEvent -> Msg) -> Attribute Msg
+onTouchStart msg =
+    let
+        decoder =
+            touchDecoder (\x y -> MouseButtonEvent (Point x y) 0)
+    in
+        onWithOptions
+            "touchstart"
+            { stopPropagation = True
+            , preventDefault = True
+            }
+            (Json.map msg decoder)
+
+
+onTouchMove : (Point -> Msg) -> Attribute Msg
+onTouchMove msg =
+    onWithOptions
+        "touchmove"
+        { stopPropagation = True
+        , preventDefault = True
+        }
+        (Json.map msg (touchDecoder Point))
+
+
+onTouchEnd : (Point -> Msg) -> Attribute Msg
+onTouchEnd msg =
+    onWithOptions
+        "touchend"
+        { stopPropagation = True
+        , preventDefault = True
+        }
+        (Json.map msg (touchDecoder Point))
+
+
+touchDecoder : (Int -> Int -> a) -> Json.Decoder a
+touchDecoder constructor =
+    Json.map2
+        constructor
+        (Json.at [ "changedTouches", "0", "pageX" ] Json.int)
+        (Json.at [ "changedTouches", "0", "pageY" ] Json.int)

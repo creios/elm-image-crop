@@ -12996,6 +12996,43 @@ var _elm_lang$mouse$Mouse$subMap = F2(
 	});
 _elm_lang$core$Native_Platform.effectManagers['Mouse'] = {pkg: 'elm-lang/mouse', init: _elm_lang$mouse$Mouse$init, onEffects: _elm_lang$mouse$Mouse$onEffects, onSelfMsg: _elm_lang$mouse$Mouse$onSelfMsg, tag: 'sub', subMap: _elm_lang$mouse$Mouse$subMap};
 
+var _user$project$ImageCrop$touchDecoder = function (constructor) {
+	return A3(
+		_elm_lang$core$Json_Decode$map2,
+		constructor,
+		A2(
+			_elm_lang$core$Json_Decode$at,
+			{
+				ctor: '::',
+				_0: 'changedTouches',
+				_1: {
+					ctor: '::',
+					_0: '0',
+					_1: {
+						ctor: '::',
+						_0: 'pageX',
+						_1: {ctor: '[]'}
+					}
+				}
+			},
+			_elm_lang$core$Json_Decode$int),
+		A2(
+			_elm_lang$core$Json_Decode$at,
+			{
+				ctor: '::',
+				_0: 'changedTouches',
+				_1: {
+					ctor: '::',
+					_0: '0',
+					_1: {
+						ctor: '::',
+						_0: 'pageY',
+						_1: {ctor: '[]'}
+					}
+				}
+			},
+			_elm_lang$core$Json_Decode$int));
+};
 var _user$project$ImageCrop$px = function (value) {
 	return A2(
 		_elm_lang$core$Basics_ops['++'],
@@ -13342,6 +13379,26 @@ var _user$project$ImageCrop$Point = F2(
 	function (a, b) {
 		return {x: a, y: b};
 	});
+var _user$project$ImageCrop$onTouchMove = function (msg) {
+	return A3(
+		_elm_lang$html$Html_Events$onWithOptions,
+		'touchmove',
+		{stopPropagation: true, preventDefault: true},
+		A2(
+			_elm_lang$core$Json_Decode$map,
+			msg,
+			_user$project$ImageCrop$touchDecoder(_user$project$ImageCrop$Point)));
+};
+var _user$project$ImageCrop$onTouchEnd = function (msg) {
+	return A3(
+		_elm_lang$html$Html_Events$onWithOptions,
+		'touchend',
+		{stopPropagation: true, preventDefault: true},
+		A2(
+			_elm_lang$core$Json_Decode$map,
+			msg,
+			_user$project$ImageCrop$touchDecoder(_user$project$ImageCrop$Point)));
+};
 var _user$project$ImageCrop$Size = F2(
 	function (a, b) {
 		return {width: a, height: b};
@@ -13396,6 +13453,21 @@ var _user$project$ImageCrop$onMouseDown = function (msg) {
 		{stopPropagation: true, preventDefault: true},
 		A2(_elm_lang$core$Json_Decode$map, msg, _user$project$ImageCrop$mouseEventDecoder));
 };
+var _user$project$ImageCrop$onTouchStart = function (msg) {
+	var decoder = _user$project$ImageCrop$touchDecoder(
+		F2(
+			function (x, y) {
+				return A2(
+					_user$project$ImageCrop$MouseButtonEvent,
+					A2(_user$project$ImageCrop$Point, x, y),
+					0);
+			}));
+	return A3(
+		_elm_lang$html$Html_Events$onWithOptions,
+		'touchstart',
+		{stopPropagation: true, preventDefault: true},
+		A2(_elm_lang$core$Json_Decode$map, msg, decoder));
+};
 var _user$project$ImageCrop$Select = function (a) {
 	return {ctor: 'Select', _0: a};
 };
@@ -13440,56 +13512,68 @@ var _user$project$ImageCrop$shadow = function (position) {
 		_elm_lang$html$Html$div,
 		{
 			ctor: '::',
-			_0: _elm_lang$html$Html_Attributes$style(
-				{
-					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: 'background-color', _1: '#000000'},
-					_1: {
-						ctor: '::',
-						_0: {ctor: '_Tuple2', _0: 'opacity', _1: '0.5'},
-						_1: {
-							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: 'position', _1: 'absolute'},
-							_1: {
-								ctor: '::',
-								_0: {
-									ctor: '_Tuple2',
-									_0: 'left',
-									_1: _user$project$ImageCrop$px(position.topLeft.x)
-								},
-								_1: {
-									ctor: '::',
-									_0: {
-										ctor: '_Tuple2',
-										_0: 'top',
-										_1: _user$project$ImageCrop$px(position.topLeft.y)
-									},
-									_1: {
-										ctor: '::',
-										_0: {
-											ctor: '_Tuple2',
-											_0: 'width',
-											_1: _user$project$ImageCrop$px(position.bottomRight.x - position.topLeft.x)
-										},
-										_1: {
-											ctor: '::',
-											_0: {
-												ctor: '_Tuple2',
-												_0: 'height',
-												_1: _user$project$ImageCrop$px(position.bottomRight.y - position.topLeft.y)
-											},
-											_1: {ctor: '[]'}
-										}
-									}
-								}
-							}
-						}
-					}
-				}),
+			_0: _user$project$ImageCrop$onMouseDown(_user$project$ImageCrop$SelectStart),
 			_1: {
 				ctor: '::',
-				_0: _user$project$ImageCrop$onMouseDown(_user$project$ImageCrop$SelectStart),
-				_1: {ctor: '[]'}
+				_0: _user$project$ImageCrop$onTouchStart(_user$project$ImageCrop$SelectStart),
+				_1: {
+					ctor: '::',
+					_0: _user$project$ImageCrop$onTouchMove(_user$project$ImageCrop$SelectAt),
+					_1: {
+						ctor: '::',
+						_0: _user$project$ImageCrop$onTouchEnd(_user$project$ImageCrop$SelectEnd),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$style(
+								{
+									ctor: '::',
+									_0: {ctor: '_Tuple2', _0: 'background-color', _1: '#000000'},
+									_1: {
+										ctor: '::',
+										_0: {ctor: '_Tuple2', _0: 'opacity', _1: '0.5'},
+										_1: {
+											ctor: '::',
+											_0: {ctor: '_Tuple2', _0: 'position', _1: 'absolute'},
+											_1: {
+												ctor: '::',
+												_0: {
+													ctor: '_Tuple2',
+													_0: 'left',
+													_1: _user$project$ImageCrop$px(position.topLeft.x)
+												},
+												_1: {
+													ctor: '::',
+													_0: {
+														ctor: '_Tuple2',
+														_0: 'top',
+														_1: _user$project$ImageCrop$px(position.topLeft.y)
+													},
+													_1: {
+														ctor: '::',
+														_0: {
+															ctor: '_Tuple2',
+															_0: 'width',
+															_1: _user$project$ImageCrop$px(position.bottomRight.x - position.topLeft.x)
+														},
+														_1: {
+															ctor: '::',
+															_0: {
+																ctor: '_Tuple2',
+																_0: 'height',
+																_1: _user$project$ImageCrop$px(position.bottomRight.y - position.topLeft.y)
+															},
+															_1: {ctor: '[]'}
+														}
+													}
+												}
+											}
+										}
+									}
+								}),
+							_1: {ctor: '[]'}
+						}
+					}
+				}
 			}
 		},
 		{ctor: '[]'});
@@ -14209,53 +14293,66 @@ var _user$project$ImageCrop$handle = function (orientation) {
 				_user$project$ImageCrop$ResizeStart(orientation)),
 			_1: {
 				ctor: '::',
-				_0: _elm_lang$html$Html_Attributes$style(
-					{
+				_0: _user$project$ImageCrop$onTouchStart(
+					_user$project$ImageCrop$ResizeStart(orientation)),
+				_1: {
+					ctor: '::',
+					_0: _user$project$ImageCrop$onTouchMove(_user$project$ImageCrop$ResizeAt),
+					_1: {
 						ctor: '::',
-						_0: {ctor: '_Tuple2', _0: 'background-color', _1: 'rgba(49,28,28,0.58)'},
+						_0: _user$project$ImageCrop$onTouchEnd(_user$project$ImageCrop$ResizeEnd),
 						_1: {
 							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: 'border', _1: '1px #eee solid'},
-							_1: {
-								ctor: '::',
-								_0: {ctor: '_Tuple2', _0: 'width', _1: '19px'},
-								_1: {
+							_0: _elm_lang$html$Html_Attributes$style(
+								{
 									ctor: '::',
-									_0: {ctor: '_Tuple2', _0: 'height', _1: '19px'},
+									_0: {ctor: '_Tuple2', _0: 'background-color', _1: 'rgba(49,28,28,0.58)'},
 									_1: {
 										ctor: '::',
-										_0: {ctor: '_Tuple2', _0: 'position', _1: 'absolute'},
+										_0: {ctor: '_Tuple2', _0: 'border', _1: '1px #eee solid'},
 										_1: {
 											ctor: '::',
-											_0: {ctor: '_Tuple2', _0: 'opacity', _1: '0.8'},
+											_0: {ctor: '_Tuple2', _0: 'width', _1: '19px'},
 											_1: {
 												ctor: '::',
-												_0: {ctor: '_Tuple2', _0: horizontalPosition, _1: horizontalSpacing},
+												_0: {ctor: '_Tuple2', _0: 'height', _1: '19px'},
 												_1: {
 													ctor: '::',
-													_0: {
-														ctor: '_Tuple2',
-														_0: A2(_elm_lang$core$Basics_ops['++'], 'margin-', horizontalPosition),
-														_1: '-11px'
-													},
+													_0: {ctor: '_Tuple2', _0: 'position', _1: 'absolute'},
 													_1: {
 														ctor: '::',
-														_0: {ctor: '_Tuple2', _0: verticalPosition, _1: verticalSpacing},
+														_0: {ctor: '_Tuple2', _0: 'opacity', _1: '0.8'},
 														_1: {
 															ctor: '::',
-															_0: {
-																ctor: '_Tuple2',
-																_0: A2(_elm_lang$core$Basics_ops['++'], 'margin-', verticalPosition),
-																_1: '-11px'
-															},
+															_0: {ctor: '_Tuple2', _0: horizontalPosition, _1: horizontalSpacing},
 															_1: {
 																ctor: '::',
 																_0: {
 																	ctor: '_Tuple2',
-																	_0: 'cursor',
-																	_1: A2(_elm_lang$core$Basics_ops['++'], cursor, '-resize')
+																	_0: A2(_elm_lang$core$Basics_ops['++'], 'margin-', horizontalPosition),
+																	_1: '-11px'
 																},
-																_1: {ctor: '[]'}
+																_1: {
+																	ctor: '::',
+																	_0: {ctor: '_Tuple2', _0: verticalPosition, _1: verticalSpacing},
+																	_1: {
+																		ctor: '::',
+																		_0: {
+																			ctor: '_Tuple2',
+																			_0: A2(_elm_lang$core$Basics_ops['++'], 'margin-', verticalPosition),
+																			_1: '-11px'
+																		},
+																		_1: {
+																			ctor: '::',
+																			_0: {
+																				ctor: '_Tuple2',
+																				_0: 'cursor',
+																				_1: A2(_elm_lang$core$Basics_ops['++'], cursor, '-resize')
+																			},
+																			_1: {ctor: '[]'}
+																		}
+																	}
+																}
 															}
 														}
 													}
@@ -14263,11 +14360,11 @@ var _user$project$ImageCrop$handle = function (orientation) {
 											}
 										}
 									}
-								}
-							}
+								}),
+							_1: {ctor: '[]'}
 						}
-					}),
-				_1: {ctor: '[]'}
+					}
+				}
 			}
 		},
 		{ctor: '[]'});
@@ -14324,7 +14421,19 @@ var _user$project$ImageCrop$selectionView = F2(
 						_1: {
 							ctor: '::',
 							_0: _user$project$ImageCrop$onMouseDown(_user$project$ImageCrop$MoveStart),
-							_1: {ctor: '[]'}
+							_1: {
+								ctor: '::',
+								_0: _user$project$ImageCrop$onTouchStart(_user$project$ImageCrop$MoveStart),
+								_1: {
+									ctor: '::',
+									_0: _user$project$ImageCrop$onTouchMove(_user$project$ImageCrop$MoveAt),
+									_1: {
+										ctor: '::',
+										_0: _user$project$ImageCrop$onTouchEnd(_user$project$ImageCrop$MoveEnd),
+										_1: {ctor: '[]'}
+									}
+								}
+							}
 						}
 					},
 					A2(_elm_lang$core$Basics_ops['++'], _user$project$ImageCrop$borders, _user$project$ImageCrop$handles)),

@@ -1,0 +1,14 @@
+language: node_js
+
+node_js:
+  - node
+
+before_script:
+  - npm install -g elm@0.18.0 elm-test@0.18.0
+
+script:
+  - elm-test
+
+cache:
+  directories:
+    - tests/elm-stuff/build-artifacts

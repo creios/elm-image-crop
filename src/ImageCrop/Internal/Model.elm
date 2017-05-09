@@ -1,6 +1,9 @@
 module ImageCrop.Internal.Model exposing (..)
 
 import Mouse
+import ImageCrop.Model.Point exposing (Point)
+import ImageCrop.Model.Rectangle exposing (Rectangle)
+import ImageCrop.Model.Size exposing (Size)
 
 
 type alias MouseButtonEvent =
@@ -61,36 +64,6 @@ type alias WaitingForOffsetData =
 type alias SelectData =
     { start : Mouse.Position
     , offset : Point
-    }
-
-
-type alias Rectangle =
-    { topLeft : Point
-    , bottomRight : Point
-    }
-
-
-type alias Point =
-    { x : Int
-    , y : Int
-    }
-
-
-type alias Movement =
-    { horizontal : Int
-    , vertical : Int
-    }
-
-
-type alias Size =
-    { width : Int
-    , height : Int
-    }
-
-
-type alias AspectRatio =
-    { width : Float
-    , height : Float
     }
 
 

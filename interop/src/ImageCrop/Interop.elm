@@ -4,13 +4,17 @@ import Html exposing (Html)
 import ImageCrop.Model
 import ImageCrop.Update
 import ImageCrop.View
+import ImageCrop.Model.AspectRatio as AspectRatio exposing (AspectRatio)
+import ImageCrop.Model.Point as Point exposing (Point)
+import ImageCrop.Model.Rectangle as Rectangle exposing (Rectangle)
+import ImageCrop.Model.Size as Size exposing (Size)
 
 
 type alias Flags =
-    { image : ImageCrop.Model.Size
+    { image : Size
     , cropAreaWidth : Int
-    , selection : Maybe ImageCrop.Model.Rectangle
-    , aspectRatio : Maybe ImageCrop.Model.AspectRatio
+    , selection : Maybe Rectangle
+    , aspectRatio : Maybe AspectRatio
     }
 
 
@@ -23,8 +27,8 @@ init { image, cropAreaWidth, selection, aspectRatio } =
 
 type Msg
     = ViewportChanged Int
-    | ReceiveOffset ImageCrop.Model.Point
-    | ChangeAspectRatio (Maybe ImageCrop.Model.AspectRatio)
+    | ReceiveOffset Point
+    | ChangeAspectRatio (Maybe AspectRatio)
     | ImageCropMsg ImageCrop.Model.Msg
 
 
@@ -90,16 +94,16 @@ subscriptions model =
             ]
 
 
-port selectionChanged : Maybe ImageCrop.Model.Rectangle -> Cmd msg
+port selectionChanged : Maybe Rectangle -> Cmd msg
 
 
 port viewportChanged : (Int -> msg) -> Sub msg
 
 
-port changeAspectRatio : (Maybe ImageCrop.Model.AspectRatio -> msg) -> Sub msg
+port changeAspectRatio : (Maybe AspectRatio -> msg) -> Sub msg
 
 
 port requestOffset : () -> Cmd msg
 
 
-port receiveOffset : (ImageCrop.Model.Point -> msg) -> Sub msg
+port receiveOffset : (Point -> msg) -> Sub msg

@@ -11,6 +11,11 @@ import Mouse
 import ImageCrop.Model exposing (Notification(..), Model)
 import ImageCrop.Internal.Model exposing (..)
 import ImageCrop.Internal.Update exposing (..)
+import ImageCrop.Model.AspectRatio as AspectRatio exposing (AspectRatio)
+import ImageCrop.Model.Movement as Movement exposing (Movement)
+import ImageCrop.Model.Point as Point exposing (Point)
+import ImageCrop.Model.Rectangle as Rectangle exposing (Rectangle)
+import ImageCrop.Model.Size as Size exposing (Size)
 
 
 init : Size -> Int -> Maybe Rectangle -> Maybe AspectRatio -> Model
@@ -173,38 +178,7 @@ moveSelection image cropAreaWidth move current =
                     |> atMost (image.height - selection.bottomRight.y)
             }
     in
-        moveRectangle movement move.originalSelection
-
-
-moveRectangle : Movement -> Rectangle -> Rectangle
-moveRectangle movement rectangle =
-    { topLeft = movePoint movement rectangle.topLeft
-    , bottomRight = movePoint movement rectangle.bottomRight
-    }
-
-
-movePoint : Movement -> Point -> Point
-movePoint movement point =
-    { x = point.x + movement.horizontal
-    , y = point.y + movement.vertical
-    }
-
-
-normalizeEdges : Size -> Point -> Point -> Rectangle
-normalizeEdges canvas first second =
-    let
-        ordered =
-            orderEdges first second
-    in
-        { topLeft =
-            { x = ordered.topLeft.x |> atLeast 0
-            , y = ordered.topLeft.y |> atLeast 0
-            }
-        , bottomRight =
-            { x = ordered.bottomRight.x |> atMost canvas.width
-            , y = ordered.bottomRight.y |> atMost canvas.height
-            }
-        }
+        Rectangle.move movement move.originalSelection
 
 
 resizeSelection : Model -> ResizeData -> Mouse.Position -> Rectangle
@@ -254,7 +228,7 @@ resizeSelection model resize position =
             }
 
         normalizedPosition =
-            movePoint normalizedMovement startingPoint
+            Point.move normalizedMovement startingPoint
     in
         case model.aspectRatio of
             Just aspectRatio ->
@@ -305,7 +279,8 @@ resizeSelection model resize position =
                     second =
                         Point secondX secondY
                 in
-                    normalizeEdges model.image first second
+                    Rectangle.normalize first second
+                        |> Rectangle.clamp model.image
 
 
 type GeneralDirection
@@ -343,7 +318,7 @@ createAspectRatioSelection image aspectRatio generalDirection anchor position =
                 position
     in
         List.foldr
-            (minBy rectangleArea)
+            (minBy Rectangle.area)
             mouseRectangle
             edgeConstraints
 
@@ -399,7 +374,7 @@ createResizeRectangleFromMouse image generalDirection aspectRatio anchor positio
                     , y = anchor.y + round (toFloat height / 2)
                     }
             in
-                orderEdges first second
+                Rectangle.normalize first second
 
         VerticalDirection ->
             let
@@ -424,7 +399,7 @@ createResizeRectangleFromMouse image generalDirection aspectRatio anchor positio
                     , y = y
                     }
             in
-                orderEdges first second
+                Rectangle.normalize first second
 
         DiagonalDirection ->
             createSelectionFromMouse image aspectRatio anchor position
@@ -451,7 +426,7 @@ createSelectionFromMouse image aspectRatio anchor position =
                     , y = anchor.y + height
                     }
             in
-                orderEdges anchor target
+                Rectangle.normalize anchor target
 
         verticallyAlignedRectangle =
             let
@@ -472,11 +447,11 @@ createSelectionFromMouse image aspectRatio anchor position =
                     , y = position.y
                     }
             in
-                orderEdges anchor target
+                Rectangle.normalize anchor target
     in
+        -- You can use minBy here instead to alter the behaviour
         maxBy
-            -- You can use minBy here instead to alter the behaviour
-            rectangleArea
+            Rectangle.area
             horizontallyAlignedRectangle
             verticallyAlignedRectangle
 
@@ -509,7 +484,7 @@ createMaxRectangles generalDirection image aspectRatio anchor position =
                             , y = height
                             }
                     in
-                        orderEdges first second
+                        Rectangle.normalize first second
 
                 bottomBoundaryRectangle =
                     let
@@ -535,7 +510,7 @@ createMaxRectangles generalDirection image aspectRatio anchor position =
                             , y = image.height
                             }
                     in
-                        orderEdges first second
+                        Rectangle.normalize first second
             in
                 [ topBoundaryRectangle, bottomBoundaryRectangle ]
 
@@ -565,7 +540,7 @@ createMaxRectangles generalDirection image aspectRatio anchor position =
                             , y = anchor.y + height
                             }
                     in
-                        orderEdges first second
+                        Rectangle.normalize first second
 
                 rightBoundaryRectangle =
                     let
@@ -591,7 +566,7 @@ createMaxRectangles generalDirection image aspectRatio anchor position =
                             , y = anchor.y + height
                             }
                     in
-                        orderEdges first second
+                        Rectangle.normalize first second
             in
                 [ leftBoundaryRectangle, rightBoundaryRectangle ]
 
@@ -622,7 +597,7 @@ createMaxRectangles generalDirection image aspectRatio anchor position =
                             , y = anchor.y + height
                             }
                     in
-                        orderEdges anchor target
+                        Rectangle.normalize anchor target
 
                 verticalBoundary =
                     let
@@ -649,7 +624,7 @@ createMaxRectangles generalDirection image aspectRatio anchor position =
                             , y = boundaryValue
                             }
                     in
-                        orderEdges anchor target
+                        Rectangle.normalize anchor target
             in
                 [ horizontalBoundary, verticalBoundary ]
 
@@ -660,18 +635,6 @@ widthFromHeight aspectRatio height =
 
 heightFromWidth aspectRatio width =
     round (toFloat width / aspectRatio.width * aspectRatio.height)
-
-
-orderEdges first second =
-    { topLeft =
-        { x = min first.x second.x
-        , y = min first.y second.y
-        }
-    , bottomRight =
-        { x = max first.x second.x
-        , y = max first.y second.y
-        }
-    }
 
 
 createSelection : SelectData -> Model -> Mouse.Position -> Maybe Rectangle
@@ -713,7 +676,8 @@ createSelection select model position =
                             normalizedPosition
 
                     Nothing ->
-                        normalizeEdges model.image normalizedStart normalizedPosition
+                        Rectangle.normalize normalizedStart normalizedPosition
+                            |> Rectangle.clamp model.image
         in
             Just selection
 
@@ -759,7 +723,7 @@ recalculateSelection : Size -> AspectRatio -> Rectangle -> Rectangle
 recalculateSelection image aspectRatio selection =
     let
         area =
-            rectangleArea selection
+            Rectangle.area selection
 
         height =
             round (sqrt (toFloat area / (aspectRatio.width / aspectRatio.height)))
@@ -781,12 +745,3 @@ recalculateSelection image aspectRatio selection =
             DiagonalDirection
             topLeft
             newBottomRight
-
-
-rectangleArea : Rectangle -> Int
-rectangleArea rectangle =
-    let
-        size =
-            rectangleSize rectangle
-    in
-        size.width * size.height

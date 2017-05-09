@@ -6,6 +6,9 @@ import Html.Events exposing (onInput, on)
 import ImageCrop.Model
 import ImageCrop.Update
 import ImageCrop.View
+import ImageCrop.Model.AspectRatio as AspectRatio exposing (AspectRatio)
+import ImageCrop.Model.Point as Point exposing (Point)
+import ImageCrop.Model.Rectangle as Rectangle exposing (Rectangle)
 import String exposing (toInt)
 import Json.Decode as Json
 
@@ -25,7 +28,7 @@ main =
 
 
 type Model
-    = Initializing ImageCrop.Model.Size
+    = Initializing Size
     | Running ImageCrop.Model.Model
 
 
@@ -52,7 +55,7 @@ init =
 type Msg
     = ImageCropMsg ImageCrop.Model.Msg
     | ViewportChanged Int
-    | ReceiveOffset ImageCrop.Model.Point
+    | ReceiveOffset Point
     | AspectRatioChanged String
 
 
@@ -236,7 +239,7 @@ labelAttribute text =
     attribute "label" text
 
 
-demoImage : ImageCrop.Model.Size -> Html Msg
+demoImage : Size -> Html Msg
 demoImage size =
     img
         [ src ("https://picload.org/image/raooacap/1k5qq4yqm0g-mark-basarab.jpg")
@@ -252,7 +255,7 @@ demoImage size =
         []
 
 
-rectangle : Maybe ImageCrop.Model.Rectangle -> Html Msg
+rectangle : Maybe Rectangle -> Html Msg
 rectangle selection =
     let
         output =
@@ -290,4 +293,4 @@ port viewportChanged : (Int -> msg) -> Sub msg
 port requestOffset : () -> Cmd msg
 
 
-port receiveOffset : (ImageCrop.Model.Point -> msg) -> Sub msg
+port receiveOffset : (Point -> msg) -> Sub msg

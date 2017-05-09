@@ -7,7 +7,14 @@
         "src"
     ],
     "exposed-modules": [
-        "ImageCrop"
+        "ImageCrop.Model",
+        "ImageCrop.Model.AspectRatio",
+        "ImageCrop.Model.Movement",
+        "ImageCrop.Model.Point",
+        "ImageCrop.Model.Rectangle",
+        "ImageCrop.Model.Size",
+        "ImageCrop.Update",
+        "ImageCrop.View"
     ],
     "dependencies": {
         "elm-lang/core": "5.0.0 <= v < 6.0.0",

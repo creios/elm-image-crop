@@ -7,13 +7,10 @@ import Mouse
 import Json.Decode as Json exposing (field)
 import ImageCrop.Model exposing (Model)
 import ImageCrop.Internal.Model exposing (..)
-import ImageCrop.Internal.Update
-    exposing
-        ( atLeast
-        , atMost
-        , scaleRectangle
-        , rectangleSize
-        )
+import ImageCrop.Internal.Update exposing (atLeast, atMost)
+import ImageCrop.Model.Point as Point exposing (Point)
+import ImageCrop.Model.Rectangle as Rectangle exposing (Rectangle)
+import ImageCrop.Model.Size as Size exposing (Size)
 
 
 view : Model -> Html Msg
@@ -49,7 +46,7 @@ selectionView model cropArea =
                     toFloat model.cropAreaWidth / toFloat model.image.width
 
                 displaySelection =
-                    scaleRectangle factor selection
+                    Rectangle.scale factor selection
             in
                 [ div
                     [ selectionStyle displaySelection
@@ -122,7 +119,7 @@ selectionStyle displaySelection =
             displaySelection.topLeft
 
         { width, height } =
-            rectangleSize displaySelection
+            Rectangle.size displaySelection
     in
         style
             [ ( "position", "absolute" )
@@ -332,7 +329,7 @@ onTouchStart : (MouseButtonEvent -> Msg) -> Attribute Msg
 onTouchStart msg =
     let
         decoder =
-            touchDecoder (\x y -> MouseButtonEvent (Point x y) 0)
+            touchDecoder (\x y -> MouseButtonEvent (Mouse.Position x y) 0)
     in
         onWithOptions
             "touchstart"

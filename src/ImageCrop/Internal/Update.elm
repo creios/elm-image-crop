@@ -1,6 +1,8 @@
 module ImageCrop.Internal.Update exposing (..)
 
-import ImageCrop.Model exposing (Rectangle, Point, Size)
+import ImageCrop.Model.Point as Point exposing (Point)
+import ImageCrop.Model.Rectangle as Rectangle exposing (Rectangle)
+import ImageCrop.Model.Size as Size exposing (Size)
 
 
 minBy : (a -> comparable) -> a -> a -> a
@@ -27,24 +29,3 @@ atLeast =
 atMost : comparable -> comparable -> comparable
 atMost =
     min
-
-
-rectangleSize : Rectangle -> Size
-rectangleSize { topLeft, bottomRight } =
-    { width = bottomRight.x - topLeft.x
-    , height = bottomRight.y - topLeft.y
-    }
-
-
-scalePoint : Float -> Point -> Point
-scalePoint factor point =
-    { x = round (toFloat point.x * factor)
-    , y = round (toFloat point.y * factor)
-    }
-
-
-scaleRectangle : Float -> Rectangle -> Rectangle
-scaleRectangle factor rectangle =
-    { topLeft = scalePoint factor rectangle.topLeft
-    , bottomRight = scalePoint factor rectangle.bottomRight
-    }

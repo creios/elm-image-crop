@@ -1,36 +1,20 @@
 module ImageCrop.Model
     exposing
         ( Model
-        , Point
-        , Size
-        , Rectangle
-        , AspectRatio
         , Msg
         , Notification(..)
         )
 
 import Mouse
 import ImageCrop.Internal.Model exposing (..)
+import ImageCrop.Model.AspectRatio exposing (AspectRatio)
+import ImageCrop.Model.Point exposing (Point)
+import ImageCrop.Model.Rectangle exposing (Rectangle)
+import ImageCrop.Model.Size exposing (Size)
 
 
 type alias Msg =
     ImageCrop.Internal.Model.Msg
-
-
-type alias Point =
-    ImageCrop.Internal.Model.Point
-
-
-type alias Rectangle =
-    ImageCrop.Internal.Model.Rectangle
-
-
-type alias Size =
-    ImageCrop.Internal.Model.Size
-
-
-type alias AspectRatio =
-    ImageCrop.Internal.Model.AspectRatio
 
 
 type alias Model =

@@ -53,10 +53,10 @@ normalize point1 point2 =
 area : Rectangle -> Int
 area rectangle =
     let
-        s =
+        { width, height } =
             size rectangle
     in
-        s.width * s.height
+        width * height
 
 
 map : (Point -> Point) -> Rectangle -> Rectangle

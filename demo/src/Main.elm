@@ -3,7 +3,9 @@ port module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (style, src, width, height, value, type_, id, selected, attribute)
 import Html.Events exposing (onInput, on)
-import ImageCrop
+import ImageCrop.Model
+import ImageCrop.Update
+import ImageCrop.View
 import String exposing (toInt)
 import Json.Decode as Json
 
@@ -23,8 +25,8 @@ main =
 
 
 type Model
-    = Initializing ImageCrop.Size
-    | Running ImageCrop.Model
+    = Initializing ImageCrop.Model.Size
+    | Running ImageCrop.Model.Model
 
 
 type alias Viewport =
@@ -48,9 +50,9 @@ init =
 
 
 type Msg
-    = ImageCropMsg ImageCrop.Msg
+    = ImageCropMsg ImageCrop.Model.Msg
     | ViewportChanged Int
-    | ReceiveOffset ImageCrop.Point
+    | ReceiveOffset ImageCrop.Model.Point
     | AspectRatioChanged String
 
 
@@ -65,11 +67,11 @@ update msg model =
                 Running model ->
                     let
                         ( newModel, newCmd, notification ) =
-                            ImageCrop.update msg model
+                            ImageCrop.Update.update msg model
 
                         appCmd =
                             case notification of
-                                ImageCrop.RequestOffset ->
+                                ImageCrop.Model.RequestOffset ->
                                     requestOffset ()
 
                                 _ ->
@@ -83,7 +85,7 @@ update msg model =
             case model of
                 Initializing size ->
                     ( Running <|
-                        ImageCrop.init
+                        ImageCrop.Update.init
                             size
                             width
                             (Just
@@ -110,7 +112,7 @@ update msg model =
                     ( model, Cmd.none )
 
                 Running model ->
-                    ( Running (ImageCrop.receiveOffset offset model), Cmd.none )
+                    ( Running (ImageCrop.Update.receiveOffset offset model), Cmd.none )
 
         AspectRatioChanged key ->
             case model of
@@ -132,7 +134,7 @@ update msg model =
                                 Nothing
 
                         newModel =
-                            ImageCrop.changeAspectRatio aspectRatio model
+                            ImageCrop.Update.changeAspectRatio aspectRatio model
                     in
                         ( Running newModel, Cmd.none )
 
@@ -150,7 +152,7 @@ subscriptions model =
                     Sub.none
 
                 Running model ->
-                    Sub.map ImageCropMsg <| ImageCrop.subscriptions model
+                    Sub.map ImageCropMsg <| ImageCrop.Update.subscriptions model
     in
         Sub.batch
             [ viewportChanged ViewportChanged
@@ -175,7 +177,7 @@ view model =
                     [ demoImage model.image
                     , Html.map
                         ImageCropMsg
-                        (ImageCrop.view model)
+                        (ImageCrop.View.view model)
                     ]
 
         controls =
@@ -234,7 +236,7 @@ labelAttribute text =
     attribute "label" text
 
 
-demoImage : ImageCrop.Size -> Html Msg
+demoImage : ImageCrop.Model.Size -> Html Msg
 demoImage size =
     img
         [ src ("https://picload.org/image/raooacap/1k5qq4yqm0g-mark-basarab.jpg")
@@ -250,13 +252,23 @@ demoImage size =
         []
 
 
-rectangle : Maybe ImageCrop.Rectangle -> Html Msg
+rectangle : Maybe ImageCrop.Model.Rectangle -> Html Msg
 rectangle selection =
     let
         output =
             case selection of
                 Just selection ->
-                    "(" ++ toString selection.topLeft.x ++ "|" ++ toString selection.topLeft.y ++ "), (" ++ toString selection.bottomRight.x ++ "|" ++ toString selection.bottomRight.y ++ ")"
+                    String.concat
+                        [ "("
+                        , toString selection.topLeft.x
+                        , "|"
+                        , toString selection.topLeft.y
+                        , "), ("
+                        , toString selection.bottomRight.x
+                        , "|"
+                        , toString selection.bottomRight.y
+                        , ")"
+                        ]
 
                 Nothing ->
                     "No selection"
@@ -278,4 +290,4 @@ port viewportChanged : (Int -> msg) -> Sub msg
 port requestOffset : () -> Cmd msg
 
 
-port receiveOffset : (ImageCrop.Point -> msg) -> Sub msg
+port receiveOffset : (ImageCrop.Model.Point -> msg) -> Sub msg

@@ -1,32 +1,34 @@
 port module ImageCrop.Interop exposing (main, viewportChanged)
 
 import Html exposing (Html)
-import ImageCrop
+import ImageCrop.Model
+import ImageCrop.Update
+import ImageCrop.View
 
 
 type alias Flags =
-    { image : ImageCrop.Size
+    { image : ImageCrop.Model.Size
     , cropAreaWidth : Int
-    , selection : Maybe ImageCrop.Rectangle
-    , aspectRatio : Maybe ImageCrop.AspectRatio
+    , selection : Maybe ImageCrop.Model.Rectangle
+    , aspectRatio : Maybe ImageCrop.Model.AspectRatio
     }
 
 
-init : Flags -> ( ImageCrop.Model, Cmd Msg )
+init : Flags -> ( ImageCrop.Model.Model, Cmd Msg )
 init { image, cropAreaWidth, selection, aspectRatio } =
-    ( ImageCrop.init image cropAreaWidth selection aspectRatio
+    ( ImageCrop.Update.init image cropAreaWidth selection aspectRatio
     , Cmd.none
     )
 
 
 type Msg
     = ViewportChanged Int
-    | ReceiveOffset ImageCrop.Point
-    | ChangeAspectRatio (Maybe ImageCrop.AspectRatio)
-    | ImageCropMsg ImageCrop.Msg
+    | ReceiveOffset ImageCrop.Model.Point
+    | ChangeAspectRatio (Maybe ImageCrop.Model.AspectRatio)
+    | ImageCropMsg ImageCrop.Model.Msg
 
 
-main : Program Flags ImageCrop.Model Msg
+main : Program Flags ImageCrop.Model.Model Msg
 main =
     Html.programWithFlags
         { init = init
@@ -36,29 +38,29 @@ main =
         }
 
 
-update : Msg -> ImageCrop.Model -> ( ImageCrop.Model, Cmd Msg )
+update : Msg -> ImageCrop.Model.Model -> ( ImageCrop.Model.Model, Cmd Msg )
 update msg model =
     case msg of
         ViewportChanged width ->
             ( { model | cropAreaWidth = width }, Cmd.none )
 
         ReceiveOffset offset ->
-            ( ImageCrop.receiveOffset offset model, Cmd.none )
+            ( ImageCrop.Update.receiveOffset offset model, Cmd.none )
 
         ChangeAspectRatio aspectRatio ->
-            ( ImageCrop.changeAspectRatio aspectRatio model, Cmd.none )
+            ( ImageCrop.Update.changeAspectRatio aspectRatio model, Cmd.none )
 
         ImageCropMsg msg ->
             let
                 ( newModel, newCmd, notification ) =
-                    ImageCrop.update msg model
+                    ImageCrop.Update.update msg model
 
                 interopCmd =
                     case notification of
-                        ImageCrop.RequestOffset ->
+                        ImageCrop.Model.RequestOffset ->
                             requestOffset ()
 
-                        ImageCrop.SelectionChanged selection ->
+                        ImageCrop.Model.SelectionChanged selection ->
                             selectionChanged selection
 
                         _ ->
@@ -69,16 +71,16 @@ update msg model =
                 )
 
 
-view : ImageCrop.Model -> Html Msg
+view : ImageCrop.Model.Model -> Html Msg
 view model =
-    Html.map ImageCropMsg (ImageCrop.view model)
+    Html.map ImageCropMsg (ImageCrop.View.view model)
 
 
-subscriptions : ImageCrop.Model -> Sub Msg
+subscriptions : ImageCrop.Model.Model -> Sub Msg
 subscriptions model =
     let
         imageCropSubs =
-            Sub.map ImageCropMsg <| ImageCrop.subscriptions model
+            Sub.map ImageCropMsg <| ImageCrop.Update.subscriptions model
     in
         Sub.batch
             [ viewportChanged ViewportChanged
@@ -88,16 +90,16 @@ subscriptions model =
             ]
 
 
-port selectionChanged : Maybe ImageCrop.Rectangle -> Cmd msg
+port selectionChanged : Maybe ImageCrop.Model.Rectangle -> Cmd msg
 
 
 port viewportChanged : (Int -> msg) -> Sub msg
 
 
-port changeAspectRatio : (Maybe ImageCrop.AspectRatio -> msg) -> Sub msg
+port changeAspectRatio : (Maybe ImageCrop.Model.AspectRatio -> msg) -> Sub msg
 
 
 port requestOffset : () -> Cmd msg
 
 
-port receiveOffset : (ImageCrop.Point -> msg) -> Sub msg
+port receiveOffset : (ImageCrop.Model.Point -> msg) -> Sub msg

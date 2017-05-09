@@ -4,7 +4,7 @@ import Test exposing (..)
 import Expect
 import Fuzz exposing (list, int, tuple, string)
 import String
-import ImageCrop.Internal exposing (..)
+import ImageCrop.Internal.Update exposing (..)
 
 
 all : Test
@@ -15,15 +15,9 @@ all =
                 \() ->
                     let
                         ( a, b ) =
-                            twoRectangles
-                    in
-                        minBy .width a b
-                            |> Expect.equal a
-            , fuzz int "Simple example fuzzed" <|
-                \i ->
-                    let
-                        ( a, b ) =
-                            twoRectanglesWith i
+                            ( { width = 10, height = 25 }
+                            , { width = 25, height = 10 }
+                            )
                     in
                         minBy .width a b
                             |> Expect.equal a
@@ -33,29 +27,33 @@ all =
                 \() ->
                     let
                         ( a, b ) =
-                            twoRectangles
-                    in
-                        maxBy .width a b
-                            |> Expect.equal b
-            , fuzz int "Simple example fuzzed" <|
-                \i ->
-                    let
-                        ( a, b ) =
-                            twoRectanglesWith i
+                            ( { width = 10, height = 25 }
+                            , { width = 25, height = 10 }
+                            )
                     in
                         maxBy .width a b
                             |> Expect.equal b
             ]
+        , describe "atLeast"
+            [ test "Below threshold" <|
+                \() ->
+                    atLeast 0 -5 |> Expect.equal 0
+            , test "At threshold" <|
+                \() ->
+                    atLeast 0 0 |> Expect.equal 0
+            , test "Above threshold" <|
+                \() ->
+                    atLeast 0 5 |> Expect.equal 5
+            ]
+        , describe "atMost"
+            [ test "Below threshold" <|
+                \() ->
+                    atMost 0 -5 |> Expect.equal -5
+            , test "At threshold" <|
+                \() ->
+                    atMost 0 0 |> Expect.equal 0
+            , test "Above threshold" <|
+                \() ->
+                    atMost 0 5 |> Expect.equal 0
+            ]
         ]
-
-
-twoRectangles =
-    ( { width = 10, height = 25 }
-    , { width = 25, height = 10 }
-    )
-
-
-twoRectanglesWith i =
-    ( { width = i, height = 25 }
-    , { width = i + 1, height = 10 }
-    )
